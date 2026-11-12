@@ -335,11 +335,11 @@
     <!-- Center Main Word Display -->
     <div class="relative flex-1 flex items-center justify-center px-6 sm:px-16">
       <!-- Active Word Card -->
-      <div class="relative z-0 max-w-4xl w-full text-center px-8">
-        <div id="game-category-label" class="text-xs sm:text-sm font-semibold uppercase tracking-widest text-indigo-400 mb-3 opacity-80">
+      <div class="relative z-0 max-w-4xl w-full min-h-full flex items-center justify-center text-center px-8">
+        <div id="game-category-label" class="hidden text-xs sm:text-sm font-semibold uppercase tracking-widest text-indigo-400 mb-3 opacity-80">
           Category
         </div>
-        <h1 id="game-word" class="font-display font-extrabold text-4xl sm:text-6xl md:text-7xl lg:text-8xl text-white leading-tight tracking-tight break-words drop-shadow-xl">
+        <h1 id="game-word" class="font-display font-extrabold text-4xl sm:text-6xl md:text-7xl lg:text-8xl text-white leading-tight tracking-tight break-words drop-shadow-xl mx-auto">
           WORD HERE
         </h1>
       </div>
@@ -1032,7 +1032,8 @@
       isPlaying: false,
       isTransitioning: false,
       tiltNeutral: true, // Prevents rapid multi-triggering from one nod
-      customWords: []
+      customWords: [],
+      wakeLock: null
     };
 
     const STORAGE_KEY_CUSTOM = 'headsup_custom_words_v1';
@@ -1204,6 +1205,28 @@
         toast.style.transition = 'opacity 0.25s ease';
         setTimeout(() => toast.remove(), 260);
       }, 2400);
+    }
+
+    async function requestWakeLock() {
+      if (!('wakeLock' in navigator) || STATE.isPlaying === false) return;
+      try {
+        if (!STATE.wakeLock) {
+          STATE.wakeLock = await navigator.wakeLock.request('screen');
+        }
+      } catch (err) {
+        console.warn('Wake Lock request failed:', err);
+      }
+    }
+
+    async function releaseWakeLock() {
+      if (!STATE.wakeLock) return;
+      try {
+        await STATE.wakeLock.release();
+      } catch (err) {
+        console.warn('Wake Lock release failed:', err);
+      } finally {
+        STATE.wakeLock = null;
+      }
     }
 
     function showView(viewId) {
@@ -1547,11 +1570,14 @@
       STATE.isTransitioning = false;
       STATE.tiltNeutral = true;
 
-      document.getElementById('game-category-label').textContent = cat.title;
+      const categoryLabel = document.getElementById('game-category-label');
+      categoryLabel.classList.add('hidden');
+      categoryLabel.textContent = cat.title;
       document.getElementById('game-score').textContent = '0';
       updateTimerDisplay();
 
       showView('view-game');
+      requestWakeLock();
       nextWord();
 
       clearInterval(STATE.timerInterval);
@@ -1654,6 +1680,7 @@
       clearInterval(STATE.timerInterval);
       clearInterval(STATE.countdownInterval);
       tryExitFullscreen();
+      releaseWakeLock();
 
       if (!endedEarly) {
         playTone('timeup');
