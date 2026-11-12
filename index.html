@@ -1532,6 +1532,16 @@
       } catch (e) {}
     }
 
+    async function lockLandscapeOrientation() {
+      try {
+        if (screen && screen.orientation && typeof screen.orientation.lock === 'function') {
+          await screen.orientation.lock('landscape');
+        }
+      } catch (e) {
+        console.warn('Orientation lock unavailable:', e);
+      }
+    }
+
     async function initiateCountdown() {
       ensureAudioContext();
       await requestMotionPermissionIfNeeded();
@@ -1560,7 +1570,7 @@
       }, 900);
     }
 
-    function startRound() {
+    async function startRound() {
       const cat = STATE.selectedCategory;
       STATE.deckQueue = buildShuffledDeck(cat);
       STATE.score = 0;
@@ -1575,6 +1585,10 @@
       categoryLabel.textContent = cat.title;
       document.getElementById('game-score').textContent = '0';
       updateTimerDisplay();
+
+      if (window.innerWidth <= window.innerHeight) {
+        await lockLandscapeOrientation();
+      }
 
       showView('view-game');
       requestWakeLock();
@@ -1753,43 +1767,40 @@
       let tiltAngle = 0;
 
       if (isLandscape) {
-        // In landscape forehead hold, gamma is around -90 (left landscape) or +90 (right landscape)
-        // Looking straight ahead: |gamma| is ~75° to 105°
-        // Nodding down (screen facing floor): |gamma| drops below 42°
-        // Tilting up (screen facing ceiling): |gamma| rises above 132° (or beta flips past ±130°)
+        // In landscape forehead hold, gamma is around -90 or +90 when upright.
+        // Only count a meaningful tilt when it's clearly past the neutral band.
         const absGamma = Math.abs(gamma);
         const absBeta = Math.abs(beta);
 
-        // Neutral zone check (upright on forehead)
-        if (absGamma >= 58 && absGamma <= 122 && absBeta < 120) {
+        // Neutral band widened to avoid tiny hand movements triggering actions.
+        if (absGamma >= 60 && absGamma <= 135 && absBeta < 120) {
           STATE.tiltNeutral = true;
           return;
         }
 
         if (!STATE.tiltNeutral) return;
 
-        if (absGamma < 42 && absBeta < 90) {
-          // Screen tilted face-down
-          tiltAngle = -1; // Down
-        } else if (absGamma > 135 || absBeta > 135) {
-          // Screen tilted face-up
-          tiltAngle = 1; // Up
+        if (absGamma < 28 && absBeta < 100) {
+          // Screen tilted face-down: strong enough downward tilt
+          tiltAngle = -1;
+        } else if (absGamma > 150 || absBeta > 150) {
+          // Screen tilted face-up: strong enough upward tilt
+          tiltAngle = 1;
         }
       } else {
-        // Portrait forehead hold: beta is ~90° when upright
-        // Nodding down (screen facing floor): beta drops below 45°
-        // Tilting up (screen facing ceiling): beta rises above 132°
-        if (beta >= 62 && beta <= 118) {
+        // Portrait forehead hold: beta is ~90° when upright.
+        // Slight shakes should not score; require a more definite nod.
+        if (beta >= 70 && beta <= 110) {
           STATE.tiltNeutral = true;
           return;
         }
 
         if (!STATE.tiltNeutral) return;
 
-        if (beta < 45 && beta > -30) {
-          tiltAngle = -1; // Down
-        } else if (beta > 132 || beta < -132) {
-          tiltAngle = 1; // Up
+        if (beta < 25 && beta > -40) {
+          tiltAngle = -1;
+        } else if (beta > 145 || beta < -145) {
+          tiltAngle = 1;
         }
       }
 
