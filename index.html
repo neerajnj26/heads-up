@@ -1,1282 +1,1837 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Heads Up! Desi & Global Party Game</title>
-  <!-- Tailwind CSS CDN -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Heads Up! — Desi & Global Party Edition</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts: Poppins -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+          colors: {
+            slate: {
+              850: '#151e32',
+              925: '#0b101d',
+              950: '#070b14',
+            }
+          },
+          animation: {
+            'pulse-fast': 'pulse 0.8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'pop': 'pop 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+          },
+          keyframes: {
+            pop: {
+              '0%': { transform: 'scale(0.88)', opacity: '0' },
+              '100%': { transform: 'scale(1)', opacity: '1' },
+            }
+          }
+        }
+      }
+    }
+  </script>
   <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      touch-action: manipulation;
+    * {
+      -webkit-tap-highlight-color: transparent;
       user-select: none;
-      -webkit-user-select: none;
     }
-    .perspective-1000 {
-      perspective: 1000px;
+    input, textarea {
+      user-select: text;
     }
-    .backface-hidden {
-      backface-visibility: hidden;
+    body {
+      background-color: #070b14;
+      color: #f8fafc;
+      overflow-x: hidden;
     }
-    /* Custom scrollbar for clean look */
+    /* Custom subtle scrollbar */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(15, 23, 42, 0.4);
     }
     ::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(148, 163, 184, 0.25);
       border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.4);
+    }
+    .glass-panel {
+      background: rgba(21, 30, 50, 0.72);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .card-hover {
+      transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card-hover:hover {
+      transform: translateY(-3px);
+    }
+    .card-hover:active {
+      transform: scale(0.98);
+    }
+    /* Hide scrollbar for category pills */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white overflow-x-hidden">
+<body class="min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
 
-  <!-- APP CONTAINER -->
-  <div id="app" class="flex-1 flex flex-col w-full max-w-5xl mx-auto p-4 md:p-6">
+  <!-- Ambient Background Glows -->
+  <div id="ambient-bg" class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+    <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-indigo-600/15 blur-[120px]"></div>
+    <div class="absolute top-1/3 -right-32 w-96 h-96 rounded-full bg-amber-500/10 blur-[130px]"></div>
+    <div class="absolute -bottom-32 left-1/3 w-96 h-96 rounded-full bg-emerald-500/10 blur-[120px]"></div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 pointer-events-none w-full max-w-sm px-4"></div>
+
+  <!-- ===================================================================== -->
+  <!-- VIEW 1: HOME / LOBBY SCREEN                                           -->
+  <!-- ===================================================================== -->
+  <div id="view-home" class="relative z-10 flex-1 flex flex-col max-w-6xl w-full mx-auto px-4 sm:px-6 py-5 sm:py-8">
     
-    <!-- HEADER -->
-    <header class="flex items-center justify-between py-4 border-b border-slate-800/80 mb-6">
-      <div class="flex items-center space-x-3 cursor-pointer" onclick="app.goHome()">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <!-- Top Navigation Bar -->
+    <header class="flex items-center justify-between gap-4 mb-6">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-amber-500 p-[1.5px] shadow-lg shadow-indigo-500/20">
+          <div class="w-full h-full bg-slate-950 rounded-[14.5px] flex items-center justify-center">
+            <svg class="w-6 h-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.5 9.5c.5-1 1.5-1.5 2.5-1.5s2 .5 2.5 1.5M9 13h6" />
+            </svg>
+          </div>
         </div>
         <div>
-          <h1 class="text-xl md:text-2xl font-black tracking-tight bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">HEADS UP!</h1>
-          <p class="text-xs text-slate-400 font-medium">The Ultimate Party Charades & Guessing Game</p>
+          <h1 class="font-display font-extrabold text-xl sm:text-2xl tracking-tight text-white flex items-center gap-2">
+            Heads Up!
+            <span class="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/20">Party Edition</span>
+          </h1>
+          <p class="text-xs sm:text-sm text-slate-400">Hold on your forehead. Guess before time runs out.</p>
         </div>
       </div>
 
-      <div class="flex items-center space-x-3">
+      <div class="flex items-center gap-2">
         <!-- Sound Toggle -->
-        <button id="soundToggleBtn" onclick="app.toggleSound()" class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition" title="Toggle Sound">
-          <svg id="soundOnIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
-          <svg id="soundOffIcon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/></svg>
+        <button id="btn-sound-toggle" onclick="toggleSound()" title="Toggle Sound Effects" class="p-2.5 rounded-xl glass-panel text-slate-300 hover:text-white hover:border-white/20 transition">
+          <svg id="icon-sound-on" class="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+          </svg>
+          <svg id="icon-sound-off" class="w-5 h-5 text-slate-500 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+          </svg>
         </button>
 
-        <!-- Custom Deck Button -->
-        <button onclick="app.openCustomModal()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-sm font-semibold shadow-lg shadow-purple-500/20 transition flex items-center space-x-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-          <span class="hidden sm:inline">Custom Deck</span>
+        <!-- How to Play Button -->
+        <button onclick="openModal('modal-howto')" class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl glass-panel text-xs sm:text-sm font-medium text-slate-200 hover:text-white hover:border-white/20 transition">
+          <svg class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>How to Play</span>
         </button>
       </div>
     </header>
 
-    <!-- MAIN VIEWPORT ROUTER -->
-    <main id="mainContent" class="flex-1 flex flex-col pb-12">
-      <!-- Dynamically rendered screens populate here -->
-    </main>
-
-  </div>
-
-  <!-- CUSTOM DECK MODAL -->
-  <div id="customModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg p-6 shadow-2xl relative">
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <h3 class="text-xl font-bold text-white flex items-center space-x-2">
-            <span>✨ Custom Inside Jokes Deck</span>
-          </h3>
-          <p class="text-xs text-slate-400">Add personalized names, inside jokes, or words (one per line or comma-separated).</p>
+    <!-- Game Settings Bar (Duration & Tilt Calibration) -->
+    <section class="glass-panel rounded-2xl p-3.5 sm:p-4 mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+      <!-- Round Timer Selector -->
+      <div class="flex items-center justify-between sm:justify-start gap-3">
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Round Time
+        </span>
+        <div class="inline-flex bg-slate-950/80 p-1 rounded-xl border border-white/5" id="duration-selector">
+          <button type="button" data-time="30" onclick="setDuration(30)" class="dur-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white">30s</button>
+          <button type="button" data-time="60" onclick="setDuration(60)" class="dur-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow">60s</button>
+          <button type="button" data-time="90" onclick="setDuration(90)" class="dur-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white">90s</button>
+          <button type="button" data-time="120" onclick="setDuration(120)" class="dur-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white">120s</button>
         </div>
-        <button onclick="app.closeCustomModal()" class="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-        </button>
       </div>
 
-      <textarea id="customWordsInput" rows="7" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition resize-none mb-4" placeholder="e.g. Rahul's chai obsession, Office Wi-Fi dropping during demo, Biryani lover, That one weird laugh..."></textarea>
+      <!-- Divider -->
+      <div class="hidden sm:block h-6 w-px bg-white/10"></div>
 
-      <div class="flex items-center justify-between">
-        <span id="customWordCountBadge" class="text-xs text-indigo-400 font-semibold bg-indigo-500/10 px-3 py-1.5 rounded-full border border-indigo-500/20">0 words added</span>
-        <div class="space-x-3">
-          <button onclick="app.clearCustomDeck()" class="px-4 py-2 rounded-xl text-sm font-semibold text-rose-400 hover:bg-rose-500/10 transition">Clear All</button>
-          <button onclick="app.saveCustomDeck()" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold shadow-lg shadow-indigo-600/30 transition">Save Deck</button>
+      <!-- Flip Tilt Direction Toggle -->
+      <div class="flex items-center justify-between sm:justify-end gap-3">
+        <div class="flex flex-col">
+          <span class="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+            Flip Tilt Direction
+            <span class="text-[10px] font-normal text-slate-400">(Phone sensor fix)</span>
+          </span>
+          <span class="text-[11px] text-slate-400" id="tilt-hint-label">Tilt Down = Correct • Tilt Up = Pass</span>
         </div>
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox" id="toggle-flip-tilt" class="sr-only peer" onchange="toggleFlipTilt(this.checked)">
+          <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 border border-white/10"></div>
+        </label>
+      </div>
+    </section>
+
+    <!-- Filter Tabs & Search -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-5">
+      <!-- Group Filter Pills -->
+      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1" id="filter-tabs">
+        <button onclick="setFilter('all')" data-filter="all" class="filter-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-white text-slate-950 shadow transition">All Decks</button>
+        <button onclick="setFilter('desi')" data-filter="desi" class="filter-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap glass-panel text-slate-300 hover:text-white transition">Desi Favourites</button>
+        <button onclick="setFilter('classic')" data-filter="classic" class="filter-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap glass-panel text-slate-300 hover:text-white transition">Classic Mix</button>
+        <button onclick="setFilter('goofy')" data-filter="goofy" class="filter-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap glass-panel text-slate-300 hover:text-white transition">Goofy & Niche</button>
+        <button onclick="setFilter('custom')" data-filter="custom" class="filter-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap glass-panel text-slate-300 hover:text-white transition">Custom Deck</button>
+      </div>
+
+      <!-- Search Input -->
+      <div class="relative w-full md:w-64">
+        <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input type="text" id="search-decks" oninput="renderCategories()" placeholder="Search categories..." class="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-900/80 border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+      </div>
+    </div>
+
+    <!-- Categories Grid (NO word counts displayed on cards) -->
+    <main id="categories-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-10">
+      <!-- Dynamically populated by JS -->
+    </main>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- VIEW 2: PRE-ROUND / READY CHECK SCREEN                                -->
+  <!-- ===================================================================== -->
+  <div id="view-ready" class="hidden fixed inset-0 z-30 bg-slate-950/95 backdrop-blur-xl overflow-y-auto overscroll-contain text-center">
+    <button onclick="showView('view-home')" class="absolute top-5 left-5 flex items-center gap-2 px-4 py-2 rounded-xl glass-panel text-sm font-medium text-slate-300 hover:text-white transition z-10">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+      </svg>
+      Back
+    </button>
+
+    <div class="min-h-full w-full flex items-center justify-center p-6 py-20 sm:p-8">
+      <div class="max-w-md w-full animate-pop">
+        <div id="ready-badge" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-400/20 mb-4">
+          Selected Deck
+        </div>
+        <h2 id="ready-title" class="font-display font-extrabold text-3xl sm:text-4xl text-white mb-2">Category Name</h2>
+        <p id="ready-tagline" class="text-slate-400 text-sm sm:text-base mb-8">Short description goes here</p>
+
+        <!-- Visual Forehead Guide -->
+        <div class="glass-panel rounded-3xl p-6 mb-8 border border-white/10">
+          <div class="flex items-center justify-center gap-6 mb-4">
+            <div class="flex flex-col items-center">
+              <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-2">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+              </div>
+              <span class="text-xs font-bold text-emerald-400 uppercase" id="ready-correct-dir">Tilt Down</span>
+              <span class="text-[11px] text-slate-400">Got It!</span>
+            </div>
+
+            <div class="h-12 w-px bg-white/10"></div>
+
+            <div class="flex flex-col items-center">
+              <div class="w-14 h-14 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 mb-2">
+                <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <span class="text-xs font-bold text-white uppercase">Forehead</span>
+              <span class="text-[11px] text-slate-400">Screen Outward</span>
+            </div>
+
+            <div class="h-12 w-px bg-white/10"></div>
+
+            <div class="flex flex-col items-center">
+              <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-2">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                </svg>
+              </div>
+              <span class="text-xs font-bold text-amber-400 uppercase" id="ready-pass-dir">Tilt Up</span>
+              <span class="text-[11px] text-slate-400">Pass Word</span>
+            </div>
+          </div>
+          <p class="text-xs text-slate-400">
+            Round length: <strong class="text-white" id="ready-duration">60s</strong> • Tap screen edges or use Arrow Keys anytime
+          </p>
+        </div>
+
+        <button onclick="initiateCountdown()" class="w-full py-4 px-8 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-500 hover:to-purple-500 text-white font-display font-extrabold text-lg sm:text-xl shadow-xl shadow-indigo-600/30 transition transform active:scale-95 mb-2">
+          I'm Ready!
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- JAVASCRIPT LOGIC -->
-  <script>
-    // --- SOUND ENGINE (Web Audio API) ---
-    class SoundEngine {
-      constructor() {
-        this.enabled = true;
-        this.ctx = null;
-      }
-      init() {
-        if (!this.ctx) {
-          const AudioContext = window.AudioContext || window.webkitAudioContext;
-          this.ctx = new AudioContext();
-        }
-        if (this.ctx.state === 'suspended') {
-          this.ctx.resume();
-        }
-      }
-      playCorrect() {
-        if (!this.enabled) return;
-        this.init();
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(523.25, now); // C5
-        osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.15); // G5
-        gain.gain.setValueAtTime(0.2, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.25);
-      }
-      playPass() {
-        if (!this.enabled) return;
-        this.init();
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(220, now); // A3
-        osc.frequency.exponentialRampToValueAtTime(146.83, now + 0.2); // D3
-        gain.gain.setValueAtTime(0.15, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.25);
-      }
-      playTick() {
-        if (!this.enabled) return;
-        this.init();
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(800, now);
-        gain.gain.setValueAtTime(0.1, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.05);
-      }
-      playBuzzer() {
-        if (!this.enabled) return;
-        this.init();
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(150, now);
-        osc.frequency.setValueAtTime(110, now + 0.15);
-        gain.gain.setValueAtTime(0.2, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.4);
-      }
-    }
+  <!-- ===================================================================== -->
+  <!-- VIEW 3: 3-2-1 COUNTDOWN SCREEN                                        -->
+  <!-- ===================================================================== -->
+  <div id="view-countdown" class="hidden fixed inset-0 z-40 bg-indigo-950 flex flex-col items-center justify-center p-6 text-center">
+    <p class="text-indigo-300 font-semibold uppercase tracking-widest text-sm sm:text-base mb-4 animate-pulse">
+      Place phone on your forehead!
+    </p>
+    <div id="countdown-number" class="font-display font-extrabold text-8xl sm:text-9xl text-white drop-shadow-2xl">
+      3
+    </div>
+    <p class="text-indigo-200/70 text-xs sm:text-sm mt-6">
+      Get ready to give clues!
+    </p>
+  </div>
 
-    // --- CATEGORIES DATA (85-90+ Funny & Goofy Prompts Each) ---
+  <!-- ===================================================================== -->
+  <!-- VIEW 4: ACTIVE GAMEPLAY SCREEN (LANDSCAPE / FULLSCREEN OPTIMIZED)     -->
+  <!-- ===================================================================== -->
+  <div id="view-game" class="hidden fixed inset-0 z-40 bg-slate-950 flex flex-col justify-between overflow-hidden transition-colors duration-200">
+    
+    <!-- Fullscreen Feedback Overlay Flash (Correct = Green, Pass = Amber) -->
+    <div id="feedback-flash" class="hidden fixed inset-0 z-50 flex items-center justify-center pointer-events-none transition-opacity duration-150">
+      <span id="feedback-text" class="font-display font-extrabold text-5xl sm:text-7xl uppercase tracking-wider text-white drop-shadow-lg">
+        CORRECT!
+      </span>
+    </div>
+
+    <!-- Top HUD Bar -->
+    <div class="relative z-20 flex items-center justify-between px-4 sm:px-8 pt-4 pb-2">
+      <!-- Quit Round -->
+      <button onclick="endRoundEarly()" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-xs sm:text-sm font-semibold backdrop-blur-md transition flex items-center gap-1.5">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+        End
+      </button>
+
+      <!-- Timer Pill -->
+      <div id="timer-badge" class="px-5 py-1.5 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md flex items-center gap-2">
+        <svg class="w-4 h-4 text-indigo-400" id="timer-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span id="game-timer" class="font-display font-extrabold text-2xl sm:text-3xl tabular-nums text-white">60</span>
+      </div>
+
+      <!-- Score Pill -->
+      <div class="px-4 py-2 rounded-xl bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs sm:text-sm font-bold">
+        Score: <span id="game-score" class="text-white text-base sm:text-lg ml-1">0</span>
+      </div>
+    </div>
+
+    <!-- Center Main Word Display + Touch Zones -->
+    <div class="relative flex-1 flex items-center justify-center px-6 sm:px-16">
+      <!-- Left Touch Zone (PASS) -->
+      <button type="button" onclick="handlePass()" aria-label="Pass Word" class="absolute inset-y-0 left-0 w-1/3 z-10 flex items-center justify-start pl-4 sm:pl-8 opacity-40 hover:opacity-90 active:opacity-100 transition group focus:outline-none">
+        <div class="flex flex-col items-center gap-1 px-3 py-4 rounded-2xl bg-amber-500/15 border border-amber-400/25 text-amber-300 group-active:scale-95 transition">
+          <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+          </svg>
+          <span class="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider">Pass</span>
+        </div>
+      </button>
+
+      <!-- Active Word Card -->
+      <div class="relative z-0 max-w-4xl w-full text-center pointer-events-none px-8">
+        <div id="game-category-label" class="text-xs sm:text-sm font-semibold uppercase tracking-widest text-indigo-400 mb-3 opacity-80">
+          Category
+        </div>
+        <h1 id="game-word" class="font-display font-extrabold text-4xl sm:text-6xl md:text-7xl lg:text-8xl text-white leading-tight tracking-tight break-words drop-shadow-xl">
+          WORD HERE
+        </h1>
+      </div>
+
+      <!-- Right Touch Zone (CORRECT) -->
+      <button type="button" onclick="handleCorrect()" aria-label="Correct Word" class="absolute inset-y-0 right-0 w-1/3 z-10 flex items-center justify-end pr-4 sm:pr-8 opacity-40 hover:opacity-90 active:opacity-100 transition group focus:outline-none">
+        <div class="flex flex-col items-center gap-1 px-3 py-4 rounded-2xl bg-emerald-500/15 border border-emerald-400/25 text-emerald-300 group-active:scale-95 transition">
+          <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          <span class="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider">Got It</span>
+        </div>
+      </button>
+    </div>
+
+    <!-- Bottom Controls Bar (Explicit Mobile/Desktop Action Buttons) -->
+    <div class="relative z-20 grid grid-cols-2 gap-3 px-4 sm:px-8 pb-4 pt-2 max-w-2xl w-full mx-auto">
+      <button type="button" onclick="handlePass()" class="py-3 sm:py-3.5 rounded-2xl bg-amber-500/20 hover:bg-amber-500/30 active:bg-amber-500/40 border border-amber-400/30 text-amber-300 font-display font-bold text-sm sm:text-base tracking-wide uppercase transition flex items-center justify-center gap-2">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+        </svg>
+        Pass (↑)
+      </button>
+      <button type="button" onclick="handleCorrect()" class="py-3 sm:py-3.5 rounded-2xl bg-emerald-500/25 hover:bg-emerald-500/35 active:bg-emerald-500/45 border border-emerald-400/40 text-emerald-300 font-display font-bold text-sm sm:text-base tracking-wide uppercase transition flex items-center justify-center gap-2">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        Correct (↓)
+      </button>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- VIEW 5: ROUND SUMMARY / RESULTS SCREEN                                -->
+  <!-- ===================================================================== -->
+  <div id="view-summary" class="hidden relative z-20 flex-1 flex flex-col max-w-2xl w-full mx-auto px-4 sm:px-6 py-8">
+    <div class="glass-panel rounded-3xl p-6 sm:p-8 text-center mb-6 animate-pop">
+      <span class="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-400/20 mb-3" id="summary-category">
+        Category
+      </span>
+      <h2 class="font-display font-extrabold text-3xl sm:text-4xl text-white mb-1">Time's Up!</h2>
+      <p class="text-slate-400 text-sm mb-6">Here is how your team performed</p>
+
+      <!-- Score Showcase -->
+      <div class="flex items-center justify-center gap-6 sm:gap-10 mb-6">
+        <div class="flex flex-col items-center">
+          <span class="font-display font-extrabold text-5xl sm:text-6xl text-emerald-400" id="summary-score">0</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 mt-1">Correct</span>
+        </div>
+        <div class="h-12 w-px bg-white/10"></div>
+        <div class="flex flex-col items-center">
+          <span class="font-display font-extrabold text-3xl sm:text-4xl text-amber-400" id="summary-passed">0</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 mt-1">Passed</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <button onclick="playAgainSameCategory()" class="py-3.5 px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-display font-bold text-sm sm:text-base shadow-lg shadow-indigo-600/25 transition active:scale-95">
+          Play Again
+        </button>
+        <button onclick="showView('view-home')" class="py-3.5 px-6 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-display font-bold text-sm sm:text-base border border-white/10 transition active:scale-95">
+          Choose Category
+        </button>
+      </div>
+    </div>
+
+    <!-- Breakdown List -->
+    <div class="glass-panel rounded-3xl p-5 sm:p-6 flex-1 overflow-y-auto max-h-[45vh]">
+      <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Round Recap</h3>
+      <ul id="summary-list" class="space-y-2.5">
+        <!-- Populated dynamically -->
+      </ul>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 1: CUSTOM DECK EDITOR                                           -->
+  <!-- ===================================================================== -->
+  <div id="modal-custom" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel rounded-3xl max-w-lg w-full p-6 sm:p-7 border border-white/15 shadow-2xl animate-pop">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="font-display font-bold text-xl text-white">Custom Inside Jokes Deck</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Add friends' names, inside jokes, or custom prompts.</p>
+        </div>
+        <button onclick="closeModal('modal-custom')" class="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="mb-3 flex items-center justify-between text-xs">
+        <span class="text-slate-400">Separate by new lines or commas</span>
+        <span id="custom-editor-count" class="font-semibold text-emerald-400">0 items ready</span>
+      </div>
+
+      <textarea id="custom-words-input" rows="7" oninput="updateCustomCountPreview()" placeholder="e.g.&#10;Rahul's Goa Plan&#10;Sharma Ji Ka Beta&#10;That One Office Meeting&#10;Priya's Cooking" class="w-full rounded-2xl bg-slate-950/90 border border-white/10 p-4 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition mb-4"></textarea>
+
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-5">
+        <button type="button" onclick="loadSampleCustomWords()" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition">
+          + Insert Sample Party Prompts
+        </button>
+        <button type="button" onclick="clearCustomWords()" class="text-xs font-semibold text-rose-400 hover:text-rose-300 transition">
+          Clear All
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <button type="button" onclick="saveCustomWords(false)" class="py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold text-sm transition">
+          Save Deck
+        </button>
+        <button type="button" onclick="saveCustomWords(true)" class="py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg shadow-emerald-600/25 transition">
+          Save & Play Now
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 2: HOW TO PLAY GUIDE                                            -->
+  <!-- ===================================================================== -->
+  <div id="modal-howto" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel rounded-3xl max-w-lg w-full p-6 sm:p-7 border border-white/15 shadow-2xl animate-pop max-h-[85vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="font-display font-bold text-xl text-white">How to Play Heads Up!</h3>
+        <button onclick="closeModal('modal-howto')" class="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="space-y-4 text-sm text-slate-300">
+        <div class="flex gap-3.5">
+          <div class="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center shrink-0">1</div>
+          <div>
+            <h4 class="font-semibold text-white">Pick a Category & Hold on Forehead</h4>
+            <p class="text-xs text-slate-400 mt-0.5">Select any deck, tap <strong>I'm Ready!</strong>, and hold your phone landscape on your forehead with the screen facing your friends.</p>
+          </div>
+        </div>
+
+        <div class="flex gap-3.5">
+          <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0">2</div>
+          <div>
+            <h4 class="font-semibold text-white">Friends Give Clues</h4>
+            <p class="text-xs text-slate-400 mt-0.5">Your friends act, hum, describe, or shout clues without saying any part of the word on screen.</p>
+          </div>
+        </div>
+
+        <div class="flex gap-3.5">
+          <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">3</div>
+          <div>
+            <h4 class="font-semibold text-white">Tilt to Score or Pass</h4>
+            <p class="text-xs text-slate-400 mt-0.5"><strong>Tilt phone face-down</strong> when you guess right. <strong>Tilt phone face-up</strong> to pass. Bring it back level to load the next word.</p>
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-white/10 text-xs text-slate-400 space-y-1.5">
+          <p class="font-semibold text-slate-200">Troubleshooting & Desktop Controls:</p>
+          <p>• <strong>iPhone users:</strong> Tap "Allow" when prompted for Motion & Orientation access.</p>
+          <p>• <strong>Inverted tilt?</strong> Enable <em>"Flip Tilt Direction"</em> on the home screen.</p>
+          <p>• <strong>Buttons / Keyboard:</strong> Tap the left/right screen edges or use <strong>↓ / →</strong> for Correct and <strong>↑ / ←</strong> for Pass.</p>
+        </div>
+      </div>
+
+      <button onclick="closeModal('modal-howto')" class="w-full mt-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition">
+        Got It
+      </button>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- JAVASCRIPT: EXPANDED WORD BANKS, AUDIO SYNTH, & TILT ENGINE           -->
+  <!-- ===================================================================== -->
+  <script>
+    // =========================================================================
+    // 1. EXPANDED CATEGORY & WORD DATABASE (85–90+ goofy & relatable items each)
+    // =========================================================================
     const CATEGORIES = [
+      // --- DESI FAVOURITES ---
       {
         id: 'superstars',
-        name: 'Celebrities & Superstars',
-        icon: '🌟',
-        gradient: 'from-amber-500 to-orange-600',
         group: 'desi',
+        title: 'Celebrities & Superstars',
+        tagline: 'Bollywood, South & global icons with maximum drama',
+        accent: 'from-amber-500 to-orange-600',
+        badgeColor: 'text-amber-300 bg-amber-500/15 border-amber-400/25',
+        icon: '⭐',
         words: [
-          "Shah Rukh Khan", "Amitabh Bachchan", "Rajinikanth", "Salman Khan", "Deepika Padukone",
-          "Alia Bhatt", "Ranbir Kapoor", "Priyanka Chopra", "Allu Arjun", "Yash (KGF)",
-          "Prabhas", "Ram Charan", "Jr. NTR", "Vijay Thalapathy", "Kamal Haasan",
-          "Mohanlal", "Mammootty", "Dulquer Salmaan", "Fahadh Faasil", "Nayanthara",
-          "Hrithik Roshan", "Aamir Khan", "Akshay Kumar", "Ranveer Singh", "Katrina Kaif",
-          "Vicky Kaushal", "Kiara Advani", "Rashmika Mandanna", "Samantha Ruth Prabhu", "Vijay Deverakonda",
-          "Mahesh Babu", "Nani", "Ajith Kumar", "Suriya", "Karthi",
-          "Chiranjeevi", "Balakrishna", "Ravi Teja", "Nagarjuna", "Venkatesh",
-          "Sanjay Dutt", "Sunny Deol", "Bobby Deol", "Kartik Aaryan", "Ananya Panday",
-          "Janhvi Kapoor", "Sara Ali Khan", "Tiger Shroff", "Varun Dhawan", "Sidharth Malhotra",
-          "Kareena Kapoor", "Madhuri Dixit", "Aishwarya Rai", "Sridevi", "Rekha",
-          "Nawazuddin Siddiqui", "Manoj Bajpayee", "Pankaj Tripathi", "Rajkummar Rao", "Ayushmann Khurrana",
-          "Nani", "Rana Daggubati", "Sai Pallavi", "Trisha Krishnan", "Keerthy Suresh",
-          "Prakash Raj", "Boman Irani", "Paresh Rawal", "Johnny Lever", "Rajpal Yadav",
-          "Akshaye Khanna", "Emraan Hashmi", "R. Madhavan", "Vijay Sethupathi", "S.J. Suryah",
-          "Kiccha Sudeep", "Darshan", "Upendra", "Puneeth Rajkumar", "Shiva Rajkumar",
-          "Rishab Shetty", "Rakshit Shetty", "Kalyani Priyadarshan", "Nazriya Nazim", "Parvathy Thiruvothu",
-          "Kunchacko Boban", "Biju Menon", "Suraj Venjaramoodu", "Joju George", "Indrajith Sukumaran",
-          "Prithviraj Sukumaran", "Asif Ali", "Tovino Thomas", "Unni Mukundan", "Shane Nigam"
+          'Shah Rukh Khan Doing Open Arms in Snow', 'Salman Khan Taking His Shirt Off for No Reason', 'Rajinikanth Flipping Sunglasses in Slow-Mo', 'Ranveer Singh Wearing a Carpet as a Suit',
+          'Amitabh Bachchan Saying "Lock Kiya Jaye"', 'Akshay Kumar Waking Up at 4 AM', 'Aamir Khan Crying With One Dramatic Tear', 'Hrithik Roshan Counting 11 Fingers',
+          'Mammootty Giving an Intense Side-Eye', 'Mohanlal Tilting His Shoulder With a Smirk', 'Fahadh Faasil Acting Only With His Eyebrows', 'Dulquer Salmaan Driving a Vintage Car',
+          'Allu Arjun Doing the Pushpa Beard Swipe', 'Prabhas Eating Biryani on Set', 'Yash Walking in Slow Motion With a Beard', 'Thalapathy Vijay Doing a Mass Dance Step',
+          'Alia Bhatt Flaring Her Nostrils', 'Deepika Padukone Spinning in a Giant Lehenga', 'Priyanka Chopra Winning Every Argument', 'Kareena Kapoor Saying "Main Apni Favourite Hoon"',
+          'A.R. Rahman Composing at 3 AM', 'Arijit Singh Singing Heartbreak Songs in a Hoodie', 'Diljit Dosanjh Vibing at Coachella', 'Nora Fatehi Doing Impossible Dance Moves',
+          'Pankaj Tripathi Nodding Wisely', 'Manoj Bajpayee Saying "Gangs of Wasseypur" Dialogues', 'Nawazuddin Siddiqui Staring Menacingly', 'Rajkummar Rao Panic-Sweating in a Horror Movie',
+          'Vicky Kaushal Dancing to Tauba Tauba', 'Ranbir Kapoor Playing a Confused Man-Child', 'Ananya Panday Talking About Her Struggle', 'Karan Johar Judging Everyone’s Outfit',
+          'Uorfi Javed Wearing Literally Anything', 'Rakhi Sawant Giving Breaking News Interviews', 'Jackie Shroff Planting a Tree ("Bhidu!")', 'Sunny Deol Uprooting a Handpump',
+          'Suniel Shetty Saying "Anjali Main Tumhe Bhool Jaun"', 'Nana Patekar Saying "Control Uday Control"', 'Paresh Rawal Adjusting Thick Glasses', 'Johnny Lever Making 10 Faces in 5 Seconds',
+          'Brahmanandam Looking Utterly Confused', 'Vadivelu Getting Beat Up in Every Scene', 'Suraj Venjaramoodu Switching From Comedy to Trauma', 'Basil Joseph Smiling Like an Innocent Kid',
+          'Tovino Thomas Taking His Shirt Off in Kerala Rain', 'Prithviraj Sukumaran Saying "Eh Eh Eh"', 'Nivin Pauly Eating Parotta Beef', 'Naslen Getting Friend-Zoned Again',
+          'Nayanthara Walking Into a Room Like a Boss', 'Samantha Ruth Prabhu Doing Oo Antava', 'Rashmika Mandanna Making a Heart Sign', 'Trisha Krishnan Looking Ageless',
+          'Kamal Haasan Wearing 10 Different Prosthetics', 'Suriya Roaring Like a Lion in Singam', 'Dhanush Dancing in a Lungi', 'Ajith Kumar Going on a World Bike Tour',
+          'Ram Charan Doing the Naatu Naatu Hook Step', 'Jr. NTR Fighting Tigers Barehanded', 'Mahesh Babu Delivering a Message in Every Movie', 'SS Rajamouli Planning a 5-Year Shoot',
+          'Virat Kohli Celebrating a Wicket Aggressively', 'MS Dhoni Staying Calm While Everyone Panics', 'Sachin Tendulkar Saying "Aila!"', 'Rohit Sharma Forgetting What He Chose at the Toss',
+          'Hardik Pandya Smiling After Hitting a Six', 'Jasprit Bumrah Confusing Batters With Physics', 'Neeraj Chopra Throwing a Javelin to Mars', 'Shreya Ghoshal Singing Like an Angel',
+          'Badshah Saying "It’s Your Boy Badshah"', 'Yo Yo Honey Singh Making 2012 Party Anthems', 'AP Dhillon Wearing Sunglasses Indoors', 'Zakir Khan Saying "Sakht Launda"',
+          'Samay Raina Ruining a Live Stream', 'Tanmay Bhat Laughing Hysterically', 'Bhuvan Bam Playing 6 Characters at Once', 'CarryMinati Roasting Your Existence',
+          'Nicolas Cage Losing His Mind', 'Keanu Reeves Being Too Nice to Humans', 'Dwayne The Rock Johnson Raising One Eyebrow', 'Tom Cruise Running Away From Explosions',
+          'Leonardo DiCaprio Pointing at the TV', 'Taylor Swift Writing a Song About Her Ex', 'Gordon Ramsay Calling Someone an Idiot Sandwich', 'Snoop Dogg Showing Up at Random Events',
+          'Pedro Pascal Eating a Sandwich', 'Zendaya Serving Red Carpet Perfection', 'Ryan Reynolds Breaking the Fourth Wall', 'Benedict Cumberbatch Trying to Say "Penguin"'
         ]
       },
       {
-        id: 'hindi_movies',
-        name: 'Hindi Movies',
+        id: 'hindi-movies',
+        group: 'desi',
+        title: 'Hindi Movies',
+        tagline: 'Cult comedies, tearjerkers & masala blockbusters',
+        accent: 'from-rose-500 to-amber-500',
+        badgeColor: 'text-rose-300 bg-rose-500/15 border-rose-400/25',
         icon: '🎬',
-        gradient: 'from-rose-500 to-red-600',
-        group: 'desi',
         words: [
-          "3 Idiots", "Dilwale Dilwale", "Sholay", "Zindagi Na Milegi Dobara", "Dil Chahta Hai",
-          "Gangs of Wasseypur", "Kabhi Khushi Kabhie Gham", "Kuch Kuch Hota Hai", "DDLJ", "Chennai Express",
-          "PK", "Sanju", "Dangal", "Bajrangi Bhaijaan", "Stree",
-          "Bhool Bhulaiyaa", "Hera Pheri", "Phir Hera Pheri", "Welcome", "Golmaal",
-          "Dhamaal", "Chup Chup Ke", "Bhagam Bhag", "Awara Paagal Deewana", "De Dana Dan",
-          "Andhadhun", "Drishyam", "Talvar", "Kahaani", "Badlapur",
-          "Barfi!", "Rockstar", "Tamasha", "YJHD", "Wake Up Sid",
-          "Queen", "English Vinglish", "Piku", "Tanu Weds Manu", "Lootera",
-          "Gully Boy", "URI: The Surgical Strike", "Raazi", "Article 15", "Mimi",
-          "Kantara", "Animal", "Pathaan", "Jawan", "Gadar 2",
-          "OMG 2", "Rocky Aur Rani Kii Prem Kahaani", "Tu Jhoothi Main Makkaar", "Zara Hatke Zara Bachke", "Zara Hatke",
-          "Jab We Met", "Rehnaa Hai Terre Dil Mein", "Kal Ho Naa Ho", "Baazigar", "Darr",
-          "Mohabbatein", "Devdas", "Swades", "Chak De! India", "My Name Is Khan",
-          "Krrish", "Koi... Mil Gaya", "Dhoom", "Don", "Agneepath",
-          "Zubeidaa", "Lagaan", "Rang De Basanti", "Taare Zameen Par", "Bhaag Milkha Bhaag",
-          "Ra.One", "Baahubali", "KGF", "Pushpa", "RRR",
-          "Stree 2", "Bhool Bhulaiyaa 3", "Munjya", "Crew", "Shaitaan",
-          "Badhaai Ho", "Stree", "Badhaai Do", "Shubh Mangal Saavdhan", "Dream Girl"
+          'Hera Pheri', 'Phir Hera Pheri', 'Andaz Apna Apna', 'Welcome', 'Bhool Bhulaiyaa',
+          '3 Idiots', 'Munna Bhai M.B.B.S.', 'Lage Raho Munna Bhai', 'Golmaal: Fun Unlimited', 'Dhamaal',
+          'Hungama', 'Garam Masala', 'Chup Chup Ke', 'Hulchul', 'Dhol',
+          'De Dana Dan', 'Bhagam Bhag', 'Khatta Meetha', 'Malamaal Weekly', 'Housefull',
+          'Stree', 'Stree 2', 'Bhediya', 'Munjya', 'Go Goa Gone',
+          'Delhi Belly', 'Fukrey', 'Vicky Donor', 'Bareilly Ki Barfi', 'Badhaai Ho',
+          'Dream Girl', 'Luka Chuppi', 'Pati Patni Aur Woh', 'Bala', 'Good Newwz',
+          'Dilwale Dulhania Le Jayenge', 'Sholay', 'Kabhi Khushi Kabhie Gham', 'Kuch Kuch Hota Hai', 'Kal Ho Naa Ho',
+          'Dil Chahta Hai', 'Zindagi Na Milegi Dobara', 'Yeh Jawaani Hai Deewani', 'Jab We Met', 'Om Shanti Om',
+          'Main Hoon Na', 'Chak De! India', 'Lagaan', 'Dangal', 'Taare Zameen Par',
+          'PK', 'Bajrangi Bhaijaan', 'Sultan', 'Dabangg', 'Bajirao Mastani',
+          'Padmaavat', 'Devdas', 'Veer-Zaara', 'Swades', 'Rang De Basanti',
+          'Gangs of Wasseypur', 'Andhadhun', 'Drishyam', 'Kahaani', 'Tumbbad',
+          'Queen', 'Barfi!', 'Rockstar', 'Tamasha', 'Sanju',
+          'Gully Boy', 'Uri: The Surgical Strike', 'Shershaah', '12th Fail', 'Laapataa Ladies',
+          'Haider', 'Maqbool', 'Omkara', 'Masaan', 'Newton',
+          'A Wednesday', 'Special 26', 'Baby', 'War', 'Pathaan',
+          'Jawan', 'Animal', 'Kabir Singh', 'Dhoom 2', 'Koi... Mil Gaya',
+          'Krrish', 'Don', 'Don 2', 'Mughal-e-Azam', 'Mr. India'
         ]
       },
       {
-        id: 'malayalam_movies',
-        name: 'Malayalam Movies',
+        id: 'malayalam-movies',
+        group: 'desi',
+        title: 'Malayalam Movies',
+        tagline: 'Mollywood laugh riots, classics & pure cinema',
+        accent: 'from-emerald-500 to-teal-600',
+        badgeColor: 'text-emerald-300 bg-emerald-500/15 border-emerald-400/25',
         icon: '🌴',
-        gradient: 'from-emerald-500 to-teal-600',
-        group: 'desi',
         words: [
-          "Manichitrathazhu", "Drishyam", "Premam", "Bangalore Days", "Kumbalangi Nights",
-          "Lucifer", "Hridayam", "2018", "Bheeshma Parvam", "Thallumala",
-          "Maheshinte Prathikaaram", "Thondimuthalum Driksakshiyum", "Joji", "Nayattu", "Pada",
-          "Malik", "C U Soon", "Trance", "Moothon", "Ishq",
-          "Helen", "Kappela", "Android Kunjappan", "Home", "Jaya Jaya Jaya Jaya Hey",
-          "Neru", "Kannur Squad", "Bramayugam", "Aadujeevitham", "Manjummel Boys",
-          "Premalu", "Guruvayoor Ambalanadayil", "Aavesham", "Vaazha", "Turbo",
-          "CID Moosa", "Meesha Madhavan", "Rajamanikyam", "Chotta Mumbai", "Nerariyan CBI",
-          "Classmates", "Pranchiyettan & the Saint", "Amen", "North 24 Kathanthar", "Annayum Rasoolum",
-          "Ustad Hotel", "Salt N' Pepper", "Traffic", "Drishyam 2", "Memories",
-          "Mumbai Police", "Oru Vadakkan Selfie", "Premam", "Charlie", "Jacobinte Swargarajyam",
-          "Oppam", "Pulimurugan", "Kayamkulam Kochunni", "Odiyan", "Marakkar",
-          "Kilukkam", "Spadikam", "Devasuram", "Aaram Thampuran", "Narasimham",
-          "Ramji Rao Speaking", "In Harihar Nagar", "Mannar Mathai Speaking", "Godfather", "Vietnam Colony",
-          "Sandesham", "Pattana Pravesham", "Nadodikkattu", "Akkare Akkare Akkare", "Mazha Peyyunnu Maddalam Kottunnu",
-          "Chithram", "Vandanam", "Boeing Boeing", "Kallan Pavithran", "Panchavadi Palam",
-          "Thoovanathumbikal", "Namukku Parkkan Munthirithoppukal", "Deshadanam", "Piravi", "Swaham",
-          "Mukham", "Yodha", "Kauravar", "Dhruvam", "Commissioner"
+          'Manichitrathazhu', 'Kilukkam', 'Ramji Rao Speaking', 'In Harihar Nagar', 'Godfather',
+          'Nadodikkattu', 'Pattanapravesham', 'Akkare Akkare Akkare', 'Sandesham', 'Punjabi House',
+          'CID Moosa', 'Kalyanaraman', 'Pulival Kalyanam', 'Meesa Madhavan', 'Chathikkatha Chanthu',
+          'Pandippada', 'Mayavi', 'Thommanum Makkalum', 'Vettam', 'Mookkilla Rajyathu',
+          'Mazha Peyyunnu Maddalam Kottunnu', 'Boeing Boeing', 'Thalayanamanthram', 'Vietnam Colony', 'Thenmavin Kombath',
+          'Spadikam', 'Devasuram', 'Narasimham', 'Aaraam Thampuran', 'Kireedam',
+          'Chithram', 'Yodha', 'Guru', 'Manjadikuru', 'Ustad Hotel',
+          'Bangalore Days', 'Premam', 'Drishyam', 'Drishyam 2', 'Kumbalangi Nights',
+          'Maheshinte Prathikaaram', 'Thondimuthalum Driksakshiyum', 'Angamaly Diaries', 'Ee.Ma.Yau.', 'Jallikattu',
+          'Churuli', 'Joji', 'The Great Indian Kitchen', 'Home', 'Malik',
+          'Ayyappanum Koshiyum', 'Driving Licence', 'Lucifer', 'Bro Daddy', 'Minnal Murali',
+          'Manjummel Boys', 'Aavesham', 'Premalu', 'Bramayugam', 'Romancham',
+          'Jaya Jaya Jaya Jaya Hey', '2018', 'Kannur Squad', 'Thallumaala', 'Hridayam',
+          'Nna Thaan Case Kodu', 'Bheeshma Parvam', 'Rorschach', 'Kishkindha Kaandam', 'Aattam',
+          'Sookshmadarshini', 'ARM (Ajayante Randam Moshanam)', 'Marco', 'Charlie', 'Om Shanthi Oshaana',
+          '1983', 'Thattathin Marayathu', 'Salt N Pepper', 'Traffic', 'Mumbai Police',
+          'Memories', 'Anjaam Pathiraa', 'Joseph', 'Nayattu', 'Kammatti Paadam',
+          'Action Hero Biju', 'Sudani from Nigeria', 'Parava', 'Trance', 'Virus',
+          'Take Off', 'Android Kunjappan Version 5.25', 'Kunjiramayanam', 'Adi Kapyare Kootamani', 'Jan.E.Man'
         ]
       },
       {
-        id: 'pan_indian_movies',
-        name: 'Pan-Indian Movies',
-        icon: '⚡',
-        gradient: 'from-indigo-500 to-violet-600',
+        id: 'pan-indian',
         group: 'desi',
+        title: 'Pan-Indian Movies',
+        tagline: 'Gravity-defying action & massive spectacles',
+        accent: 'from-orange-500 to-red-600',
+        badgeColor: 'text-orange-300 bg-orange-500/15 border-orange-400/25',
+        icon: '🔥',
         words: [
-          "Baahubali: The Beginning", "Baahubali 2: The Conclusion", "KGF: Chapter 1", "KGF: Chapter 2", "RRR",
-          "Pushpa: The Rise", "Pushpa 2: The Rule", "Kantara", "Kantara: A Legend Chapter 1", "Salaar: Part 1 – Ceasefire",
-          "Kalki 2898 AD", "Animal", "Jawan", "Pathaan", "Tiger 3",
-          "Saaho", "Radhe Shyam", "Adipurush", "Devara: Part 1", "Game Changer",
-          "Captain Miller", "Leo", "Vikram", "Kaithi", "Master",
-          "Beast", "Varisu", "Jailer", "Indian 2", "Indian 3",
-          "Ponniyin Selvan: I", "Ponniyin Selvan: II", "Vikrant Rona", "777 Charlie", "Kabzaa",
-          "Sita Ramam", "Major", "Goodachari", "HIT: The First Case", "HIT: The Second Case",
-          "Eega", "Magadheera", "Baahubali", "RRR", "Ala Vaikunthapurramuloo",
-          "Sarileru Neekevvaru", "Bharat Ane Nenu", "Maharshi", "Rangasthalam", "Pushpa",
-          "Jersey", "Mahanati", "Geetha Govindam", "Arjun Reddy", "Kabir Singh",
-          "Khaidi No. 150", "Sye Raa Narasimha Reddy", "Acharya", "Waltair Veerayya", "Veera Simha Reddy",
-          "Bimbisara", "Dasara", "Hi Nanna", "Bhagavanth Kesari", "Bro",
-          "LEO", "Thunivu", "Valimai", "Master", "Bigil",
-          "Sarkar", "Mersal", "Theri", "Kaththi", "Thuppakki",
-          "Master", "Beast", "Varisu", "Leo", "Indian 2",
-          "KGF", "Salaar", "Kabzaa", "Kantara", "Charlie 777",
-          "Vikrant Rona", "Kotigobba 3", "Roberrt", "Yuvarathnaa", "James"
+          'Baahubali: The Beginning', 'Baahubali 2: The Conclusion', 'RRR', 'KGF: Chapter 1', 'KGF: Chapter 2',
+          'Pushpa: The Rise', 'Pushpa 2: The Rule', 'Kantara', 'Kalki 2898 AD', 'Salaar: Part 1 – Ceasefire',
+          'Jailer', 'Vikram', 'Leo', 'Kaithi', 'Master',
+          'Enthiran (Robot)', '2.0', 'Sivaji: The Boss', 'Anniyan (Aparichit)', 'Ghajini',
+          'Magadheera', 'Eega (Makkhi)', 'HanuMan', 'Karthikeya 2', 'Sita Ramam',
+          'Ponniyin Selvan: I', 'Ponniyin Selvan: II', 'Animal', 'Jawan', 'Pathaan',
+          'Stree 2', 'Chhaava', 'Devara: Part 1', 'Game Changer', 'Coolie',
+          'Vettaiyan', 'Amaran', 'Indian 2', 'Kanguva', 'Thangalaan',
+          'Maharaja', 'Aavesham', 'Manjummel Boys', 'Premalu', '2018',
+          'Minnal Murali', 'Lucifer', 'L2: Empuraan', '777 Charlie', 'Garuda Gamana Vrishabha Vahana',
+          'Sapta Sagaradaache Ello', 'Ugramm', 'Lucia', 'Avane Srimannarayana', 'Vikrant Rona',
+          'Dasara', 'Hi Nanna', 'Tillu Square', 'DJ Tillu', 'Ala Vaikunthapurramuloo',
+          'Arjun Reddy', 'Rangasthalam', 'Bharat Ane Nenu', 'Srimanthudu', 'Pokiri',
+          'Athadu', 'Bimbisara', 'Major', 'Goodachari', 'Evaru',
+          'Ratsasan', 'Vikram Vedha', '96', 'Soorarai Pottru', 'Jai Bhim',
+          'Asuran', 'Vada Chennai', 'Thuppakki', 'Mersal', 'Bigil',
+          'Kabali', 'Petta', 'Vishwaroopam', 'Dasavathaaram', 'Nayagan',
+          'Roja', 'Bombay', 'Dil Se..', 'I (2015)', 'Ra.One'
         ]
       },
       {
-        id: 'desi_songs',
-        name: 'Bollywood & Desi Bangers',
-        icon: '🎶',
-        gradient: 'from-pink-500 to-rose-600',
+        id: 'desi-songs',
         group: 'desi',
+        title: 'Bollywood & Desi Bangers',
+        tagline: 'Baraat anthems, heartbreak & shower concerts',
+        accent: 'from-fuchsia-500 to-purple-600',
+        badgeColor: 'text-fuchsia-300 bg-fuchsia-500/15 border-fuchsia-400/25',
+        icon: '🎵',
         words: [
-          "Tum Hi Ho", "Chaiyya Chaiyya", "Kajra Re", "Desi Girl", "Galliyan",
-          "Apna Time Aayega", "Kabira", "Illahi", "Badtameez Dil", "Ghungroo",
-          "Sami Sami", "Naatu Naatu", "Arabic Kuthu", "Tauba Tauba", "Zingaat",
-          "Oo Antava", "Butta Bomma", "Rowdy Baby", "Saami Saami", "Bullet Song",
-          "Lungi Dance", "Blue Eyes", "Honey Singh Anthem", "Dheere Dheere", "Chaar Botal Vodka",
-          "Party All Night", "Angreji Beat", "Sunny Sunny", "Love Dose", "Manali Trance",
-          "Kala Chashma", "Bad Boy", "Dil Diyan Gallan", "Swag Se Swagat", "Kamli",
-          "Chikni Chameli", "Sheila Ki Jawani", "Munni Badnaam Hui", "Fevicol Se", "Pink Lips",
-          "Balam Pichkari", "Lat Lag Gayi", "Saree Ke Fall Sa", "Be Intehaan", "Khuda Jaane",
-          "Pehli Nazar Mein", "Tu Jaane Na", "Sooraj Dooba Hain", "Kar Gayi Chull", "Saturday Saturday",
-          "Hookah Bar", "Tera Hona Laga Hoon", "Ajab Si", "Zara Zara", "Tum Se Hi",
-          "Beete Lamhe", "Mitwa", "Maahi Ve", "Bole Chudiyan", "Suraj Hua Madham",
-          "Ek Tha Tiger", "Jai Ho", "Mauja Hi Mauja", "Bachna Ae Haseeno", "Pyaar Ho Gaya",
-          "Gerua", "Manma Emotion Jaane", "Dilwale Dulhania", "Tujh Mein Rab Dikhta Hai", "Gerua",
-          "Srivalli", "Heeriye", "Kesariya", "Apna Bana Le", "O Bedardeya",
-          "Chaleya", "Not Ramaiya Vastavaiya", "Lal Peeli Akhiyaan", "Tauba Tauba", "Sajni",
-          "Pehle Bhi Main", "Arjan Vailly", "Satranga", "Hua Main", "Papa Meri Jaan"
+          'Chaiyya Chaiyya', 'Tunak Tunak Tun', 'Lungi Dance', 'Kala Chashma', 'Badtameez Dil',
+          'Bole Chudiyan', 'Kajra Re', 'Munni Badnaam Hui', 'Sheila Ki Jawani', 'Oo Antava',
+          'Naatu Naatu', 'Rowdy Baby', 'Why This Kolaveri Di', 'Apna Time Aayega', 'Zingaat',
+          'Mundian To Bach Ke', 'Kangna Tera Ni', 'Amplifier (Imran Khan)', 'Brown Rang', 'Blue Eyes',
+          'Illuminati (Aavesham)', 'Tauba Tauba', 'Jamal Kudu (Glass on Head)', 'Husn (Anuv Jain)', 'Pasoori',
+          'Kal Ho Naa Ho', 'Tum Hi Ho', 'Channa Mereya', 'Agar Tum Saath Ho', 'Kesariya',
+          'Jai Ho', 'Tujh Mein Rab Dikhta Hai', 'Kabira', 'Ilahi', 'Senorita',
+          'Dard-e-Disco', 'Desi Girl', 'Maa Da Laadla', 'Mauja Hi Mauja', 'Nagada Sang Dhol',
+          'Ghoomar', 'Malhari', 'Khalibali', 'Tattad Tattad', 'Balam Pichkari',
+          'Ghungroo', 'Jai Jai Shivshankar', 'London Thumakda', 'Gallan Goodiyaan', 'Kar Gayi Chull',
+          'Bom Diggy Diggy', 'Chammak Challo', 'Aankh Marey', 'Dilbar', 'O Saki Saki',
+          'Kutti Story', 'Jimikki Kammal', 'Arabic Kuthu', 'Vaathi Coming', 'Kaavaalaa',
+          'Hukum (Jailer)', 'Srivalli', 'Saami Saami', 'Butta Bomma', 'Manike Mage Hithe',
+          'Brown Munde', 'Excuses (AP Dhillon)', '295 (Sidhu Moose Wala)', 'Lover (Diljit Dosanjh)', 'G.O.A.T.',
+          'Chaleya', 'Jhoome Jo Pathaan', 'Aaj Ki Raat', 'Taras', 'Bijlee Bijlee',
+          'Param Sundari', 'Nadiyon Paar', 'Sauda Khara Khara', 'Morni Banke', 'Coka',
+          'Laung Laachi', '3 Peg', 'Patiala Peg', 'High Heels', 'Saturday Saturday',
+          'Abhi Toh Party Shuru Hui Hai', 'DJ Waley Babu', 'Proper Patola', 'Dilliwaali Girlfriend', 'Subha Hone Na De'
         ]
       },
       {
-        id: 'indian_food',
-        name: 'Indian Food & Street Eats',
-        icon: 'pani_puri',
-        gradient: 'from-orange-500 to-amber-600',
+        id: 'indian-food',
         group: 'desi',
+        title: 'Indian Food & Street Eats',
+        tagline: 'Chaat cravings, biryani debates & food comas',
+        accent: 'from-yellow-500 to-orange-500',
+        badgeColor: 'text-yellow-300 bg-yellow-500/15 border-yellow-400/25',
+        icon: '🍛',
         words: [
-          "Pani Puri", "Masala Dosa", "Butter Chicken", "Biryani", "Chole Bhature",
-          "Pav Bhaji", "Samosa", "Vada Pav", "Poha", "Idli Sambar",
-          "Upma", "Aloo Paratha", "Paneer Tikka", "Dal Makhani", "Palak Paneer",
-          "Malai Kofta", "Chicken Biryani", "Mutton Rogan Josh", "Fish Curry", "Prawn Malai Curry",
-          "Hyderabadi Biryani", "Lucknowi Biryani", "Malabar Biryani", "Thalassery Biryani", "Ambur Biryani",
-          "Gulab Jamun", "Jalebi", "Rasgulla", "Kaju Katli", "Mysore Pak",
-          "Kulfi", "Falooda", "Rasmalai", "Rabri", "Imarti",
-          "Bhel Puri", "Sev Puri", "Dahi Puri", "Papdi Chaat", "Raj Kachori",
-          "Momos", "Kathi Roll", "Frankie", "Egg Roll", "Chicken Shawarma",
-          "Golgappa", "Pani Patasha", "Puchka", "Batata Vada", "Sabudana Khichdi",
-          "Dhokla", "Khandvi", "Thepla", "Fafda", "Patra",
-          "Mirchi Bajji", "Mysore Bonda", "Uzhunnu Vada", "Parippu Vada", "Unniyappam",
-          "Appam", "Puttu", "Idiyappam", "Kerala Parotta", "Malabar Paratha",
-          "Rava Dosa", "Mysore Dosa", "Set Dosa", "Pesarattu", "Bisi Bele Bath",
-          "Pongal", "Ven Pongal", "Puliyogare", "Lemon Rice", "Curd Rice",
-          "Dal Tadka", "Jeera Rice", "Kachori", "Samosa Chaat", "Dahi Vada",
-          "Badam Milk", "Filter Coffee", "Masala Chai", "Cutting Chai", "Nimbu Soda",
-          "Lassi", "Chaas", "Thandai", "Rooh Afza", "Jigarthanda"
+          'Pani Puri Guy Giving One Extra Sukha Puri', 'Masala Dosa Bigger Than the Table', 'Biryani With Controversial Elaichi', 'Butter Chicken at 2 AM',
+          'Cutting Chai in a Tiny Glass', 'Extra Spicy Mirchi Bhajji', 'Pav Bhaji Drowning in Amul Butter', 'Cold Gulab Jamun vs Hot Gulab Jamun',
+          'Burnt Maggi at Midnight', 'Filter Coffee Froth Pour From 2 Feet High', 'Rajma Chawal Sunday Afternoon Coma', 'Chole Bhature Followed by Immediate Nap',
+          'Vada Pav With Dry Garlic Chutney', 'Samosa With Mint and Tamarind Chutney', 'Crispy Jalebi With Cold Rabri', 'Masala Chai With Ginger and Cardamom',
+          'Idli Sambar Dipped Until Mushy', 'Rasmalai Melting in Your Mouth', 'Tandoori Chicken Straight From the Clay Oven', 'Mutton Rogan Josh',
+          'Palak Paneer', 'Aloo Paratha With a Mountain of White Butter', 'Steamed Chicken Momos With Fiery Red Chutney', 'Puttu and Kadala Curry',
+          'Appam With Coconut Milk Stew', '28-Item Kerala Sadhya on a Banana Leaf', 'Malai Kulfi on a Wooden Stick', 'Thick Mango Lassi',
+          'Dahi Puri Explosion in One Bite', 'Bhel Puri in a Newspaper Cone', 'Sev Puri', 'Aloo Tikki Chaat',
+          'Kachori Sabzi', 'Spicy Kolhapuri Misal Pav', 'Spongy Khaman Dhokla', 'Fafda Jalebi Sunday Breakfast',
+          'Overnight Simmered Dal Makhani', 'Butter Garlic Naan', 'Smoky Paneer Tikka', 'Chicken Tikka Masala',
+          'Flaky Malabar Parotta', 'Kerala Beef Fry With Coconut Slices', 'Alleppey Fish Molee', 'Pazham Pori (Banana Fritters)',
+          'Unniyappam', 'Crispy Medu Vada', 'Pesarattu Upma', 'Kanda Poha With Sev',
+          'Kaju Katli Disappearing in 5 Seconds', 'Motichoor Ladoo', 'Spongy Bengali Rasgulla', 'Ghee-Dripping Mysore Pak',
+          'Winter Gajar Ka Halwa', 'Ada Pradhaman Payasam', 'Rose Falooda With Basil Seeds', 'Street-Side Masala Nimbu Pani',
+          'Fresh Sugarcane Juice With Ginger', 'Tawa Pulao', 'Chilli Chicken Dry', 'Gobi Manchurian',
+          'Schezwan Fried Rice', 'Egg Bhurji With Buttered Pav', 'Keema Pav', 'Akuri on Toast',
+          'Parsi Berry Pulao', 'Litti Chokha', 'Dal Baati Churma', 'Laal Maas',
+          'Chettinad Chicken', 'Kothu Parotta Chopping Noise', 'Jigarthanda', 'Pootharekulu (Paper Sweet)',
+          'Gongura Mutton', 'Pesarattu', 'Bisi Bele Bath', 'Ragi Mudde',
+          'Neer Dosa', 'Mangalore Buns', 'Ghee Roast Chicken', 'Shawarma Roll With Extra Toum',
+          'Bun Maska With Irani Chai', 'Osmania Biscuits', 'Double Ka Meetha', 'Shahi Tukda',
+          'Thandai During Holi', 'Modak', 'Puran Poli', 'Gujiya', 'Aam Panna'
         ]
       },
       {
-        id: 'desi_life',
-        name: 'Desi Life & Relatable Chaos',
+        id: 'desi-life',
+        group: 'desi',
+        title: 'Desi Life & Relatable Chaos',
+        tagline: 'Everyday Indian household survival moments',
+        accent: 'from-amber-400 to-rose-500',
+        badgeColor: 'text-amber-200 bg-amber-500/15 border-amber-400/25',
         icon: '🛺',
-        gradient: 'from-yellow-500 to-amber-600',
-        group: 'desi',
         words: [
-          "Auto Rickshaw meter refusing", "Sharma ji ka beta", "Aunty asking 'Shaadi kab hai?'", "Tu janta nahi mera baap kaun hai", "Bargaining with vegetable vendor for 5 rupees",
-          "Polythene bags stored inside a polythene bag", "Tupperware container stained orange with turmeric", "Using laptop charger as phone stand", "Charging phone using extension cord with 5 pins", "Putting water in empty ketchup bottle",
-          "Mom cleaning remote cover with plastic wrap", "Dad wearing sandals with socks", "Extended family group chat good morning messages", "Forgetting wedding gifts logbook", "Unsolicited marriage horoscope matching",
-          "Getting yelled at for not wearing sweater in Bangalore 22 degree weather", "Engineering backlogs and final year panic", "Engineering placement mass recruitment", "Mess food experiments with paneer cubes floating in water", "Hostel warden raid during exam night",
-          "Using Duke or Nivea cream tin as sewing box", "Monsoon pothole survival race", "Stuck in Silk Board junction traffic for 2 hours", "Swiggy delivery guy lost in apartment maze", "Blinkit grocery arriving before you can tie your shoelaces",
-          "Zomato rating delivery agent 5 stars out of pure guilt", "UPI server down panic at billing counter", "Scanning QR code 10 times while scanner freezes", "Asking 'Bhaiyya thoda free mein dhaniya dena'", "Keeping 10 rupee coin taped inside wallet",
-          "Putting newspaper on new bookshelf", "Dusting living room right before guests arrive", "Relatives staying over for 2 weeks uninvited", "Trying to wake up Dad from Sunday afternoon nap", "Kids forced to dance in front of guests",
-          "Mom hiding snacks in secret kitchen cabinet", "Father holding umbrella for entire family", "Fighting over TV remote during India-Pakistan match", "Grandpa lecturing about 'our time' milk prices", "Using old calendar pages as school notebook covers",
-          "Sticker bombing laptop lid with random cafe stickers", "Sneaking chai into library in thermos flask", "Pretending to listen to phone call to avoid neighbor", "Leaving water bottle in fridge 90% empty", "Stretching old toothbrush to clean bathroom tiles",
-          "Waiting for AC to cool while sitting directly under fan", "Refusing to throw away gift wrapping boxes", "Keeping old mobile boxes in wardrobe for 10 years", "Using dried coconut shell as planter", "Folding clothes while watching 3-hour YouTube video"
+          'Sharma Ji Ka Beta Getting 99.8%', 'Mom Using a Plastic Bag Full of Plastic Bags', 'Dad Turning Off the AC Because "It’s Chilling Now"', 'Aunties Asking "Beta Shaadi Kab Hai?"',
+          'Auto Driver Saying "Meter Kharab Hai"', 'Baraat Blocking the Entire Highway', 'Bargaining ₹50 Down to ₹48', 'Turning Off the Fan Before Leaving the Room',
+          'Wet Towel on the Bed Crisis', 'Neighbor Peeking Through the Curtain', 'Uncle Giving Unsolicited Career Advice', 'Guest Refusing Tea Three Times Before Drinking It',
+          'Mom’s Flying Chappal With Heat-Seeking Radar', 'Engineering vs Medical Family Debate', 'Chai Tapri Gossip Session', 'Honking 0.01 Seconds After the Signal Turns Green',
+          'Losing Mom’s Tupperware Box and Never Returning Home', 'Wedding Buffet Rush Like the Hunger Games', 'Power Cut Inverter Beep at 3 AM', 'Goa Trip That Never Leaves the WhatsApp Group',
+          'Uncle Forwarding "Good Morning" Flowers on WhatsApp', 'Asking for Free Dhaniya Mirchi With Sabzi', 'TV Remote Wrapped in Clear Plastic', 'Parle-G Biscuit Falling Inside Hot Chai',
+          'Stealing the Groom’s Shoes at Joota Chupai', 'Board Exam Result Day Heart Attack', 'Sleeper Class Train Upper Berth Struggle', 'Stepping in Cow Dung With New Sneakers',
+          'Midnight Mosquito Racket Electric Shock Hunt', 'Ceiling Fan Regulator Stuck on Speed 5', 'Washing Machine Sounding Like a Helicopter Takeoff', 'Dad Standing With Hands Behind Back Watching Road Work',
+          'Hiding Your Report Card Under the Mattress', 'Asking the Chaat Guy for "Thoda Aur Sukha Puri"', 'Mom Saying "We Have Food at Home"', 'Packing 4 Suitcases for a 2-Day Weekend Trip',
+          'Airport Security Tray Panic', 'India vs Pakistan Match Stopping All Traffic', 'Diwali Deep-Cleaning Trauma', 'Fake Laughing at Your Boss’s Terrible Joke',
+          'Finding ₹500 in Old Jeans During Laundry', 'Staring at the Swiggy Rider on the Map', 'Cousin Getting Married Before You', 'Family WhatsApp Group Drama',
+          'Opening a Kwality Walls Box and Finding Ginger-Garlic Paste', 'Opening a Royal Dansk Tin and Finding Sewing Needles', 'Standing in a Bank Queue During "Lunch Time"', 'Monsoon Pothole Splash From a Passing Bus',
+          'Begging the Teacher for 2 Grace Marks', 'Using Old T-Shirts as Holi Clothes and Then Floor Mops', 'Covering School Textbooks With Brown Paper', 'Mom Putting Vicks VapoRub on Every Illness',
+          'Drinking Haldi Doodh Under Duress', 'Relative Giving ₹100 Silently While Leaving', 'Saying "I’m 5 Minutes Away" While Still in the Shower', 'Indian Stretchable Time (IST)',
+          'Two Scooters Doing a 20 km/h Highway Chat', 'Trying to Cross an Indian Road Without Looking', 'Putting Water in the Shampoo Bottle to Make It Last', 'Squeezing the Toothpaste Tube With a Rolling Pin',
+          'Dad Checking Every Door Lock Three Times at Night', 'Mom Calling You 14 Times If You Miss One Call', 'Wedding Photographer Making You Pose Awkwardly', 'Caterer Serving Gulab Jamun Next to Dal',
+          'Aunty Complimenting You and Insulting You in One Sentence', 'Comparing Flight Prices at 2 AM in Incognito Mode', 'UPI Server Down Right at the Billing Counter', 'Asking Friends "Bhai Splitwise Pe Daal Dena"',
+          'Bringing 10 kg of Sweets Through Airport Security', 'Parents Turning Down the TV Volume to Scold You', 'Sleeping on the Floor When Relatives Visit', 'Eating Maggi Out of the Vessel to Save Dishes',
+          'Forgetting Your Umbrella Only on Heavy Rain Days', 'Auto Driver Rejecting You Without Even Hearing the Location', 'Sitting on the Trunk to Zip an Overpacked Suitcase', 'Mom Guarding the Good Crockery Only for Guests',
+          'Checking Your Hair in a Parked Car’s Window', 'Asking "Bhaiya Bhaiya" Until the Shopkeeper Listens', 'Putting Wet Phone in a Bowl of Rice', 'Buying Coriander and Getting Roasted for Overpaying',
+          'Dad Watching News Debates at Maximum Volume', 'Cousins Fighting Over the Charger', 'Turning Off the Geyser After 2 Minutes to Save Electricity', 'Getting Stared at by 15 Strangers During a Roadside Argument',
+          'Using a Newspaper as a Dining Table Mat'
         ]
       },
+
+      // --- CLASSIC MIX ---
       {
-        id: 'act_it_out',
-        name: 'Act It Out!',
-        icon: '🎭',
-        gradient: 'from-violet-500 to-purple-600',
+        id: 'act-it-out',
         group: 'classic',
+        title: 'Act It Out!',
+        tagline: 'Zero talking—pure physical comedy & charades',
+        accent: 'from-cyan-500 to-blue-600',
+        badgeColor: 'text-cyan-300 bg-cyan-500/15 border-cyan-400/25',
+        icon: '🎭',
         words: [
-          "Drowning in quicksand",
-          "Walking barefoot on Lego bricks",
-          "Trying to kill a mosquito buzzing near your ear",
-          "Applying eye drops without blinking",
-          "Sneezing while driving a manual car",
-          "Eating super spicy Pani Puri and pretending it's mild",
-          "Taking a selfie with 50 filters on Instagram",
-          "Running for a local train just as doors are closing",
-          "Stuck in a broken elevator pushing all buttons",
-          "Attempting a dramatic Bollywood death scene",
-          "Fighting invisible ninja ghosts in your hallway",
-          "Opening a wet umbrella inside a crowded bus",
-          "Typing angry customer review on phone while eating cold fries",
-          "Trying to untangle wired earphones from pocket",
-          "Walking on hot summer asphalt barefoot",
-          "Searching for lost phone using flashlight while holding phone",
-          "Trying to swallow a massive vitamin pill without water",
-          "Applying sunscreen on face and ending up looking like ghost",
-          "Getting caught sleeping during office Zoom meeting",
-          "Trying to fold a fitted bed sheet all by yourself",
-          "Sneaking out of house past strict parents at midnight",
-          "Stubbing your pinky toe on the bed corner table",
-          "Trying to act cool after slipping on a banana peel",
-          "Peeling stubborn garlic skin that sticks to fingers",
-          "Brushing teeth while rushing for office cab",
-          "Trying to look majestic in heavy wind blowing hair",
-          "Eating a golgappa in one giant messy bite",
-          "Stuck inside skin-tight skinny jeans",
-          "Faking stomach ache to skip Monday morning meeting",
-          "Checking mirror 20 times before a first date",
-          "Trying to take last slice of pizza without looking greedy",
-          "Unsuccessfully trying to whistle with fingers",
-          "Catching a slippery fish with bare hands",
-          "Trying to push a door that clearly says PULL",
-          "Wrestling with a heavy blanket on a freezing morning",
-          "Trying to discretely adjust wedgie in public",
-          "Crying while chopping onions like a dramatic hero",
-          "Attempting yoga pose and immediately cramping up",
-          "Trying to balance 5 cups of chai on a small tray",
-          "Pretending to understand complex corporate presentation",
-          "Riding a bicycle with no hands and crashing into bushes",
-          "Trying to catch a falling glass before it shatters",
-          "Opening fizzy soda bottle that was shaken by friend",
-          "Scared of stepping on floor because 'the floor is lava'",
-          "Trying to put contact lenses on for the first time",
-          "Standing inside crowded metro train holding onto roof strap",
-          "Trying to zip up winter jacket over stuffed sweater",
-          "Stuck in spiderweb face-first in dark backyard",
-          "Attempting moonwalk on slippery marble floor",
-          "Trying to discreetly check teeth for food in mirror"
+          'Trying to Walk Quietly at 3 AM', 'Stepping on a Lego Barefoot', 'Eating an Extremely Sour Lemon With a Straight Face', 'Attempting to Fold a Fitted Bedsheet',
+          'Parallel Parking While Everyone Watches', 'Fighting an Invisible Mosquito in the Dark', 'Pretending to Work When the Boss Walks By', 'Dropping Your Phone on Your Face in Bed',
+          'Chasing a Flying Cockroach', 'Holding in a Sneeze in a Quiet Room', 'Walking on Hot Sand at the Beach', 'Trying to Open a Stuck Pickle Jar',
+          'Walking on a Tightrope Over Sharks', 'Changing a Stinky Diaper', 'T-Rex Trying to Make a Bed', 'Trapped Inside an Invisible Glass Box',
+          'Riding a Mechanical Bull', 'Slipping on a Banana Peel in Slow-Mo', 'Doing Yoga on a Rocking Boat', 'Sneaking Past a Sleeping Guard Dog',
+          'Defusing a Ticking Time Bomb', 'Milking an Angry Cow', 'Walking Against a Category 5 Hurricane', 'Pulling Excalibur From a Stone',
+          'Swimming Away From Jaws', 'Juggling Invisible Chainsaws', 'Struggling to Put on Tight Skinny Jeans', 'Stubbing Your Pinky Toe in Total Silence',
+          'Getting Electrocuted by a Broken Toaster', 'Sumo Wrestler Stomping Into the Ring', 'Ballet Dancer Spinning Out of Control', 'Zombie Chasing a Slow Runner',
+          'Robot Running Out of Battery', 'Surfing a 50-Foot Tsunami Wave', 'Bowling a Gutter Ball and Pretending It Was Cool', 'Weightlifter Trying to Lift 500 kg',
+          'Barber Accidentally Shaving Off an Eyebrow', 'Dentist Pulling Out a Stubborn Wisdom Tooth', 'Cat Coughing Up a Massive Hairball', 'Penguin Waddling on Slippery Ice',
+          'Flamingo Trying to Balance on One Leg', 'Silverback Gorilla Beating Its Chest', 'Fishing and Accidentally Hooked a Great White', 'Archery Shot Missing the Entire Target',
+          'Playing an Intense Air Guitar Solo', 'Conducting a Chaotic Symphony Orchestra', 'Ice Skating on a Freshly Mopped Floor', 'Blowing Up a Balloon Until It Explodes',
+          'Drinking Boiling Hot Chai and Burning Your Tongue', 'Dodging Lasers Like a Secret Agent', 'Riding the First Drop of a Rollercoaster', 'Skydiver Realizing the Parachute Is a Backpack',
+          'Pumping Iron in Front of a Gym Mirror', 'Applying Eyeliner in a Bumpy Auto Rickshaw', 'Running After a Bus That Just Pulled Away', 'Swatting a Bee While Holding Hot Coffee',
+          'Trying to Untangle Wired Earphones', 'Walking Into a Spiderweb in the Dark', 'Eating Extremely Spicy Pani Puri Without Crying', 'Pretending to Understand a Math Lecture',
+          'Hiding Under the Blanket From a Horror Movie', 'Doing the Moonwalk Badly', 'Spinning a Basketball on Your Finger', 'Trying to Catch a Falling Laptop',
+          'Waking Up Late for an Exam', 'Sneezing 8 Times in a Row', 'Tasting Dog Food by Mistake', 'Rowing a Boat With One Oar',
+          'Climbing Mount Everest in Flip-Flops', 'Taking a Dramatic Slow-Motion Selfie', 'Shoveling Snow in a Blizzard', 'Chopping Onions and Sobbing Uncontrollably',
+          'Trying to Keep Your Eyes Open in a Boring Meeting', 'Getting Stuck in a Revolving Door', 'Doing Pushups Until Your Arms Collapse', 'Riding a Unicycle on a Tightrope',
+          'Wrestling an Alligator', 'Eating Corn on the Cob Like a Typewriter', 'Trying to Sneeze When It Won’t Come Out', 'Walking Through Deep Sticky Mud',
+          'Playing Drum Solo on Steering Wheel in Traffic', 'Trying to Sit Quietly on a Squeaky Chair', 'Balancing 10 Plates Like a Waiter', 'Escaping Quicksand'
         ]
       },
       {
         id: 'animals',
-        name: 'Animals & Wildlife',
+        group: 'classic',
+        title: 'Animals & Wildlife',
+        tagline: 'Dramatic pets, fierce beasts & weird critters',
+        accent: 'from-teal-500 to-emerald-600',
+        badgeColor: 'text-teal-300 bg-teal-500/15 border-teal-400/25',
         icon: '🦁',
-        gradient: 'from-emerald-500 to-green-600',
-        group: 'classic',
         words: [
-          "Bengal Tiger", "Asian Elephant", "Indian Rhinoceros", "Snow Leopard", "Sloth Bear",
-          "King Cobra", "Peafowl", "Lion-tailed Macaque", "Gharial", "Nilgiri Tahr",
-          "Honey Badger", "Capybara", "Red Panda", "Platypus", "Axolotl",
-          "Quokka", "Narwhal", "Pangolin", "Echidna", "Fennec Fox",
-          "Sea Otter", "Sloth", "Koala", "Meerkat", "Hedgehog",
-          "Chameleon", "Axolotl", "Alpaca", "Llama", "Capybara",
-          "Bald Eagle", "Great White Shark", "Blue Whale", "Killer Orca", "Grizzly Bear",
-          "African Lion", "Cheetah", "Giraffe", "Zebra", "Hippopotamus",
-          "Rhinoceros", "Kangaroo", "Koala Bear", "Tasmanian Devil", "Wombat",
-          "Orangutan", "Chimpanzee", "Gorilla", "Mandrill", "Lemur",
-          "Giant Panda", "Polar Bear", "Arctic Wolf", "Reindeer", "Moose",
-          "Bald Eagle", "Ostrich", "Emu", "Cassowary", "Flamingo",
-          "Toucan", "Macaw", "Hummingbird", "Peregrine Falcon", "Barn Owl",
-          "Komodo Dragon", "Iguana", "Galapagos Tortoise", "Anaconda", "Python",
-          "Electric Eel", "Manta Ray", "Hammerhead Shark", "Blue Ringed Octopus", "Jellyfish",
-          "Honey Bee", "Bumblebee", "Praying Mantis", "Hercules Beetle", "Tarantula",
-          "Scorpion", "Centipede", "Jumping Spider", "Firefly", "Dragonfly"
+          'Screaming Goat', 'Judgy Persian Cat', 'Drama Queen Husky', 'T-Rex Trying to Clap',
+          'Penguin Slipping on Ice', 'Trash Panda Raccoon at 2 AM', 'Angry Honey Badger', 'Sleepy Sloth in Slow Motion',
+          'Peacock Showing Off Its Feathers', 'Stray Dog Chasing a Delivery Scooter', 'Pigeon Walking Like a Bodyguard', 'Confused Orange Cat With One Braincell',
+          'Kangaroo Ready to Box', 'Corgi With Tiny Stubby Legs', 'Duck-Billed Platypus', 'Color-Changing Chameleon',
+          'King Cobra Hood Flared', 'Snow Leopard', 'Giant Pacific Octopus', 'Pink Flamingo Standing on One Leg',
+          'Emperor Penguin', 'Red Panda', 'Cheetah Sprinting at 100 km/h', 'Komodo Dragon',
+          'Narwhal (Unicorn of the Sea)', 'Meerkat Standing on Lookout', 'Hippopotamus Yawning', 'Ostrich Burying Its Head',
+          'Smiling Pink Axolotl', 'Great White Shark', 'Royal Bengal Tiger', 'Asiatic Lion',
+          'Indian Elephant Splashing Water', 'One-Horned Rhinoceros', 'Rolled-Up Pangolin', 'Spiky Porcupine',
+          'Armadillo', 'Tiny Hedgehog', 'Eucalyptus-Drunk Koala', 'Wombat',
+          'Tasmanian Devil', 'Orangutan', 'Silverback Gorilla', 'Chimpanzee',
+          'Ring-Tailed Lemur', 'Blue Whale', 'Bottlenose Dolphin', 'Killer Whale (Orca)',
+          'Hammerhead Shark', 'Giant Manta Ray', 'Translucent Jellyfish', 'Seahorse',
+          'Inflated Pufferfish', 'Electric Eel', 'Sea Otter Holding Hands', 'Chonky Walrus',
+          'Polar Bear', 'Grizzly Bear Catching Salmon', 'Arctic Fox', 'Big-Eared Fennec Fox',
+          'Laughing Hyena', 'Chill Capybara Riding a Crocodile', 'Spitting Llama', 'Fluffy Alpaca',
+          'Bald Eagle', 'Peregrine Falcon', 'Snowy Owl', 'Rainbow Toucan',
+          'Hummingbird Hovering', 'Praying Mantis', 'Dung Beetle Rolling a Ball', 'Peacock Mantis Shrimp',
+          'Blobfish', 'Quokka Smiling for a Selfie', 'Chihuahua Shaking With Rage', 'Golden Retriever Bringing a Stick',
+          'Pug Snoring Loudly', 'Parrot Repeating Your Secrets', 'Crow Stealing Shiny Objects', 'Seagull Stealing French Fries',
+          'Gecko Crawling on the Ceiling', 'Bullfrog Croaking', 'Snapping Turtle', 'Llama With a Mullet'
         ]
       },
       {
-        id: 'fictional_characters',
-        name: 'Fictional Characters',
-        icon: '🦸‍♂️',
-        gradient: 'from-blue-500 to-indigo-600',
+        id: 'fictional',
         group: 'classic',
+        title: 'Fictional Characters',
+        tagline: 'Legends, sitcom icons & dramatic villains',
+        accent: 'from-indigo-500 to-purple-600',
+        badgeColor: 'text-indigo-300 bg-indigo-500/15 border-indigo-400/25',
+        icon: '🦸',
         words: [
-          "Harry Potter", "Hermione Granger", "Ron Weasley", "Dumbledore", "Voldemort",
-          "Sherlock Holmes", "Batman", "Superman", "Spider-Man", "Iron Man",
-          "Captain America", "Thor", "Hulk", "Black Widow", "Doctor Strange",
-          "Thanos", "Loki", "Darth Vader", "Luke Skywalker", "Yoda",
-          "Gandalf", "Frodo Baggins", "Aragorn", "Gollum", "Legolas",
-          "Katniss Everdeen", "Sherlock Holmes", "James Bond", "Jack Sparrow", "Indiana Jones",
-          "Mickey Mouse", "Bugs Bunny", "Homer Simpson", "Bart Simpson", "SpongeBob SquarePants",
-          "Pikachu", "Naruto Uzumaki", "Goku", "Monkey D. Luffy", "Tanjiro Kamado",
-          "Wednesday Addams", "Eleven (Stranger Things)", "Walter White", "Jesse Pinkman", "Jon Snow",
-          "Daenerys Targaryen", "Tyrion Lannister", "Rick Sanchez", "Morty Smith", "Bojack Horseman",
-          "Shrek", "Buzz Lightyear", "Woody", "Elsa", "Simba",
-          "Mulan", "Moana", "Stitch", "Gru", "Minions",
-          "Joker", "Harley Quinn", "Deadpool", "Wolverine", "Black Panther",
-          "Aquaman", "Wonder Woman", "Flash", "Green Lantern", "Doctor Who",
-          "Katniss Everdeen", "Percy Jackson", "Katniss Everdeen", "Sherlock Holmes", "Peppa Pig",
-          "Doraemon", "Nobita", "Shinchan", "Tom and Jerry", "Oggy"
+          'Babu Bhaiya (Hera Pheri)', 'Jethalal Gada', 'Daya Ben Doing Garba', 'Chhota Bheem Eating Laddoos',
+          'Shinchan Doing the Butt Dance', 'Doraemon Pulling Gadgets Out of Nowhere', 'Circuit (Munna Bhai)', 'Crime Master Gogo',
+          'Mogambo ("Mogambo Khush Hua")', 'Gabbar Singh ("Kitne Aadmi The?")', 'Mr. Bean', 'Michael Scott (The Office)',
+          'Dwight Schrute', 'Sheldon Cooper ("Bazinga!")', 'Captain Jack Sparrow', 'Darth Vader Breathing Heavily',
+          'Batman With a Sore Throat', 'Deadpool', 'Shrek', 'SpongeBob SquarePants',
+          'Harry Potter', 'Iron Man (Tony Stark)', 'Sherlock Holmes', 'Shaktimaan Spinning Rapidly',
+          'Son Goku Going Super Saiyan', 'Naruto Uzumaki Running With Arms Back', 'The Joker', 'Queen Elsa ("Let It Go")',
+          'Walter White (Heisenberg)', 'Jon Snow Knowing Nothing', 'Thanos Snapping His Fingers', 'Spider-Man Pointing at Spider-Man',
+          'Pikachu', 'Geralt of Rivia ("Hmm")', 'Wednesday Addams Not Blinking', 'Monkey D. Luffy',
+          'Vegeta Over 9000', 'Itachi Uchiha', 'Gojo Satoru', 'Eren Yeager',
+          'Light Yagami Eating a Potato Chip Dramatically', 'Tom and Jerry', 'Scooby-Doo', 'Mickey Mouse',
+          'Homer Simpson ("D’oh!")', 'Rick Sanchez', 'Chandler Bing', 'Joey Tribbiani ("How You Doin’?")',
+          'The Professor (Money Heist)', 'Eleven (Stranger Things)', 'Gandalf ("You Shall Not Pass!")', 'Gollum ("My Precious")',
+          'Frodo Baggins', 'Yoda Speaking Backwards', 'The Mandalorian (Din Djarin)', 'Baby Yoda (Grogu)',
+          'Wolverine', 'Captain America', 'Thor', 'Loki',
+          'Doctor Strange', 'Wonder Woman', 'Superman', 'Chulbul Pandey',
+          'Munna Bhai', 'Krrish', 'Nagavalli (Manichitrathazhu)', 'Ranga (Aavesham)',
+          'Rocky Bhai (KGF)', 'Pushpa Raj ("Jhukega Nahi")', 'Baahubali', 'Kattappa',
+          'Shakuni Mama', 'Tenali Rama', 'Birbal', 'Suppandi',
+          'Chacha Chaudhary', 'Sabu', 'Motu and Patlu', 'Oggy and the Cockroaches',
+          'Ben 10', ' Johnny Bravo Flexing', 'Dexter in His Laboratory', 'Courage the Cowardly Dog',
+          'Po the Kung Fu Panda', 'Lighting McQueen ("Kachow!")', 'Buzz Lightyear', 'Minions Saying "Banana!"'
         ]
       },
       {
-        id: 'pop_culture',
-        name: 'Pop Culture & Trends',
-        icon: '🔥',
-        gradient: 'from-fuchsia-500 to-pink-600',
+        id: 'pop-culture',
         group: 'classic',
+        title: 'Pop Culture & Trends',
+        tagline: 'Internet brainrot, viral memes & binge-watch lore',
+        accent: 'from-pink-500 to-rose-600',
+        badgeColor: 'text-pink-300 bg-pink-500/15 border-pink-400/25',
+        icon: '📱',
         words: [
-          "Sigma Male grindset", "Skibidi Toilet", "Fanum Tax", "Rizzler", "Gyatt",
-          "Only in Ohio", "Grimace Shake", "Baby Shark", "Gangnam Style", "Harlem Shake",
-          "Salt Bae", "Challenger meme", "AI generated images with 6 fingers", "ChatGPT hallucinating code", "Prompt engineering",
-          "Crypto bro explaining blockchain", "NFT monkey profile picture", "Web3 metaverse party", "Influencer unboxing PR package", "Vlogging with selfie stick in gym",
-          "Doing reels in the middle of airport traffic", "Paparazzi spotting celebrity at coffee shop", "Leaked iPhone 16 dummy model", "Apple Vision Pro wearing spaz", "Cyberpunk dystopian commute",
-          "Speedrun any% world record", "Twitch streamer screaming at monitor", "Discord mod banning user", "Reddit moderator touching grass", "Twitter arguments at 3 AM",
-          "Instagram algorithm shadowbanning", "TikTok transition gone wrong", "POV: You are waiting for your Swiggy order", "Core memory unlocked", "Main character energy",
-          "Touch grass", "Living rent-free in my head", "It is giving aesthetic", "Delulu is the solulu", "Roman Empire obsession",
-          "Girl dinner", "Boy math", "Girl math", "Everything is cake meme", "Is this a pigeon meme",
-          "Distracted boyfriend meme", "Drake hotline bling meme", "Bernie Sanders mittens", "Success kid", "Grumpy Cat"
+          'Doomscrolling at 3 AM', 'Replying "K" to a 5-Paragraph Text', 'Main Character Syndrome', 'Sending a 7-Minute Voice Note Podcast',
+          'Ghosting Someone After Saying "Let’s Catch Up Soon"', 'Getting Rickrolled in 2026', '"It’s Giving..." Energy', 'Unskippable 30-Second Double YouTube Ads',
+          'Algorithm Knowing You Better Than Your Therapist', 'Taking a Screenshot and Sending It to the Same Person', 'Influencer Filming a Dance in a Crowded Airport', 'Netflix Asking "Are You Still Watching?"',
+          'Met Gala Outfits Nobody Can Sit In', 'Taylor Swift Eras Tour', 'Squid Game Red Light Green Light', 'Stranger Things Upside Down',
+          'Distracted Boyfriend Meme', 'Podcast Bro With Two Microphones', 'Tech Unboxing ASMR', 'YouTuber Apology Video With a Ukulele',
+          'Oscars Slap Heard Around the World', 'Asking ChatGPT to Write Your Excuses', 'Instagram Reels Algorithm Reading Your Mind', 'BeReal Notification at the Worst Moment',
+          'Spotify Wrapped Exposing Your Music Taste', 'Ruining Your 300-Day Wordle Streak', 'Among Us Sus Imposter', 'Minecraft Creeper Hissing Behind You',
+          'Waiting 12 Years for GTA 6', 'Barbenheimer Double Feature', 'Pedro Pascal Meme', 'Doge Coin Going to the Moon',
+          'Buying an Expensive JPEG (NFT)', 'Cancel Culture Mob', 'Unspoken Rizz', 'Delulu Is the Solulu',
+          'Girl Math Justifying Free Shipping', 'Thinking About the Roman Empire', 'ASMR Tapping on Everything', '10,000-Calorie Mukbang Video',
+          'Get Ready With Me (GRWM) Storytime', 'Thrift Store Haul', 'Bombastic Side Eye', 'Woman Yelling at a Confused Cat',
+          'This Is Fine Dog in a Burning Room', 'Stonks Rising Meme', 'K-Pop Fancam in Every Reply', 'BTS Army',
+          'Blackpink in Your Area', 'Game of Thrones Red Wedding Trauma', 'Breaking Bad RV Cooking', 'The Office Jim Looking at the Camera',
+          'Friends Pivot Couch Scene', 'Shark Tank "I’m Out"', 'MasterChef Pressure Test Meltdown', 'Soft Launching a Partner on Instagram',
+          'Hard Launching on Valentine’s Day', 'Beige Flag', 'Red Flag Disguised as a Green Flag', 'Situationship Drama',
+          'Quiet Luxury', 'Stan Twitter Arguing at 4 AM', 'Wikipedia Rabbit Hole at Midnight', 'Reading 1-Star Reviews for Fun',
+          'Putting "Sent From My iPhone" as a Flex', 'Blue Tick Anxiety on WhatsApp', 'Typing... Disappearing Forever', 'Group Chat Dead Silence After a Bad Joke',
+          'Spotify Blend Compatibility Score', 'Duolingo Owl Threatening Your Family', 'LinkedIn Lunatics Motivational Story', 'AI Generated Hands With 7 Fingers',
+          'Subway Surfers Gameplay Below a Story', 'Coachella Desert Dust', 'Coldplay Wristbands Lighting Up', 'Apple Removing Another Port',
+          'True Crime Documentary Binge', 'Reality TV Reunion Drama', 'Skipping the Intro Button', 'Watching Movies at 1.5x Speed',
+          'Spoiler Alert Ruining the Finale', 'Meme Template That Refuses to Die'
         ]
       },
       {
         id: 'sports',
-        name: 'Sports & Legends',
-        icon: '⚽',
-        gradient: 'from-cyan-500 to-blue-600',
         group: 'classic',
+        title: 'Sports & Legends',
+        tagline: 'Gully cricket rules, stadium roars & GOATs',
+        accent: 'from-blue-500 to-indigo-600',
+        badgeColor: 'text-blue-300 bg-blue-500/15 border-blue-400/25',
+        icon: '🏆',
         words: [
-          "Virat Kohli", "MS Dhoni", "Sachin Tendulkar", "Rohit Sharma", "Jasprit Bumrah",
-          "Ravindra Jadeja", "Hardik Pandya", "Suryakumar Yadav", "Rishabh Pant", "Kapil Dev",
-          "Sunil Gavaskar", "Rahul Dravid", "Virender Sehwag", "Yuvraj Singh", "Sourav Ganguly",
-          "Anil Kumble", "Harbhajan Singh", "Zaheer Khan", "Sania Mirza", "PV Sindhu",
-          "Neeraj Chopra", "Mary Kom", "Saina Nehwal", "Abhinav Bindra", "Viswanathan Anand",
-          "Lionel Messi", "Cristiano Ronaldo", "Neymar Jr", "Kylian Mbappe", "Erling Haaland",
-          "David Beckham", "Zinedine Zidane", "Pelé", "Diego Maradona", "Ronaldinho",
-          "LeBron James", "Michael Jordan", "Kobe Bryant", "Stephen Curry", "Kevin Durant",
-          "Usain Bolt", "Michael Phelps", "Novak Djokovic", "Rafael Nadal", "Roger Federer",
-          "Lewis Hamilton", "Max Verstappen", "Michael Schumacher", "Ayrton Senna", "Conor McGregor",
-          "Mike Tyson", "Muhammad Ali", "Floyd Mayweather", "John Cena", "The Rock (Dwayne Johnson)",
-          "Undertaker", "Roman Reigns", "Seth Rollins", "CM Punk", "Stone Cold Steve Austin",
-          "MS Dhoni helicopter shot", "Kohli cover drive", "Tendulkar straight drive", "Bumrah yorker", "Rohit Sharma double century"
+          'MS Dhoni Helicopter Shot', 'Virat Kohli Aggressive Celebration', 'Sachin Tendulkar Upper Cut', 'Jasprit Bumrah Unreadable Bowling Action',
+          'Gully Cricket "One Tip One Hand"', 'Last Ball 6 Runs Needed', 'Bat Owner Taking His Bat Home After Getting Out', 'Cristiano Ronaldo "Siuuu!" Jump',
+          'Lionel Messi Kissing the World Cup Trophy', 'Usain Bolt Lightning Bolt Pose', 'Neeraj Chopra Golden Javelin Throw', 'Umpire Giving a Dramatic Slow Out Signal',
+          'Cricket World Cup Final', 'Formula 1 2-Second Pit Stop', 'Wimbledon Strawberries and Cream', 'FIFA World Cup Penalty Shootout',
+          'Super Over Heart Attack', 'Chess Fool’s Mate Checkmate', 'Pro Kabaddi Breathless Raid', 'Michael Jordan Free-Throw Line Dunk',
+          'Olympic Photo Finish', 'Badminton Jump Smash', 'IPL Mega Auction Paddle War', 'Virat Kohli Cover Drive',
+          'PV Sindhu Olympic Rally', 'Viswanathan Anand Lightning Chess', 'Magnus Carlsen Resigning After 2 Moves', 'D Gukesh World Champion',
+          'Roger Federer One-Handed Backhand', 'Rafael Nadal Picking His Shorts Before Serving', 'Novak Djokovic Doing the Splits', 'Serena Williams Ace',
+          'Lewis Hamilton "Bono My Tyres Are Gone"', 'Max Verstappen Radio Rant', 'Michael Schumacher Ferrari Era', 'LeBron James Chalk Toss',
+          'Stephen Curry No-Look Three-Pointer', 'Kobe Bryant Mamba Mentality', 'Neymar Jr Rolling 15 Times After a Tackle', 'Kylian Mbappé Speed Boost',
+          'Diego Maradona Hand of God', 'Pelé Bicycle Kick', 'UEFA Champions League Anthem', 'El Clásico Drama',
+          'The Ashes Urn', 'Hat-Trick Ball', 'DRS Review "Ball Tracking Loading..."', 'Mankading Controversy',
+          'Relay Catch on the Boundary Rope', 'Referee Pulling a Red Card', 'VAR Drawing Offside Lines for 5 Minutes', 'Slam Dunk Shattering the Backboard',
+          'Golf Hole-in-One', 'Tour de France Peloton Crash', 'Muhammad Ali Float Like a Butterfly', 'Mike Tyson Uppercut',
+          'Conor McGregor Billionaire Strut', 'WWE Royal Rumble Surprise Entry', 'John Cena "You Can’t See Me"', 'The Undertaker Sitting Up',
+          'Rayudu 3D Glasses Tweet', 'Dinesh Karthik Nidahas Trophy Last-Ball Six', 'Yuvraj Singh 6 Sixes in an Over', 'Kapil Dev 1983 Catch',
+          'Rishabh Pant One-Handed Six', 'Suryakumar Yadav Scoop Shot Behind the Wicket', 'Hardik Pandya No-Look Watch Celebration', 'Gully Cricket "Trial Ball"',
+          'Gully Cricket "Hit Into Neighbor’s House = Out"', 'Bowler Bowling Underarm Chucking', 'Soccer Player Faking an Injury', 'Goalkeeper Scoring a Last-Minute Header',
+          'Panenka Penalty Chip', 'Nutmegging a Defender', 'Gym Bro Skipping Leg Day', 'Marathon Runner Hitting the Wall',
+          'Table Tennis Rally at Light Speed', 'Sumo Wrestling Salt Throw', 'Curling Sweeping the Ice Furiousy', 'Pole Vault Knocking the Bar With Chin',
+          'Swimming Flip Turn', 'Boxing Bell Saved by the Round', 'F1 Driver Blaming the Strategy Team'
         ]
       },
+
+      // --- GOOFY & NICHE ZONE ---
       {
-        id: 'goofy_zone',
-        name: 'Goofy & Unhinged',
+        id: 'goofy',
+        group: 'goofy',
+        title: 'Goofy & Unhinged',
+        tagline: 'Absurd brainrot & weirdly specific human moments',
+        accent: 'from-violet-500 to-fuchsia-600',
+        badgeColor: 'text-violet-300 bg-violet-500/15 border-violet-400/25',
         icon: '🤪',
-        gradient: 'from-rose-500 via-purple-500 to-indigo-600',
-        group: 'goofy',
         words: [
-          "Accidentally opening front camera in dark room",
-          "Pretending to text on phone to avoid making eye contact",
-          "Walking into spider web face-first",
-          "Sneezing while wearing eyeliner",
-          "Trying to sleep on side with heavy headphones",
-          "Dropping phone directly on face while lying in bed",
-          "Tripping on flat smooth floor for absolutely no reason",
-          "Saying 'You too' when waiter says 'Enjoy your meal'",
-          "Forgetting why you walked into the kitchen",
-          "Waving back at someone who was waving at person behind you",
-          "Trying to look cool while slipping on ice or water",
-          "Pretending to laugh at joke you didn't hear at all",
-          "Searching for glasses that are already on your face",
-          "Putting USB drive in upside down 3 times in a row",
-          "Sneaking extra snacks into movie theater bag",
-          "Fighting with plastic grocery bag handles that won't open",
-          "Attempting DIY haircut and instantly regretting it",
-          "Biting tongue while eating delicious food",
-          "Staring blankly at wall while contemplating life choices",
-          "Trying to fold fitted bed sheet and balling it up in rage",
-          "Opening fridge 5 times expecting new food to appear",
-          "Stuck in oversized sweater sleeve trying to find hand",
-          "Laughing uncontrollably at inappropriate quiet moment",
-          "Making weird fish face while applying mascara",
-          "Tripping over your own shoelaces in public",
-          "Trying to discreetly pick wedgie in crowded elevator",
-          "Waking up from 10-minute nap feeling like time traveler",
-          "Accidentally liking Instagram post from 2018 while stalking",
-          "Pretending to understand wine flavors at fancy party",
-          "Stuck trying to untangle headphone wire for 20 minutes",
-          "Trying to eat giant burger without destroying shirt",
-          "Getting soap in eye during shower and panicking",
-          "Trying to walk gracefully with heels in muddy grass",
-          "Stubbing toe and silently screaming in agony",
-          "Standing awkwardly at party holding empty paper cup",
-          "Trying to catch falling mug and making it worse",
-          "Sneezing 7 times in a row like machine gun",
-          "Trying to look mysterious in fog with cheap jacket",
-          "Stuck inside tight pair of skinny jeans",
-          "Making weird gargling sounds while brushing teeth"
+          'Three Raccoons in a Trench Coat', 'Microwave Beeping at 2:59 AM', 'Wi-Fi Disconnecting During a Boss Fight', 'A Pigeon Wearing a Bread Necklace',
+          'Accidentally Liking a 2016 Photo While Stalking', 'Overthinking a Text From 4 Years Ago', 'Socks With Sandals Confidence', 'Stubbing Your Pinky Toe on Furniture',
+          'Brain Freeze From Eating Ice Cream Too Fast', 'Laughing Uncontrollably at a Serious Moment', 'Forgetting Why You Walked Into a Room', 'Awkward Elevator Silence With a Stranger',
+          'Singing Opera at Maximum Volume in the Shower', 'Stepping on a Lego at Midnight', 'Sneezing With Your Eyes Open', 'Autocorrect Ruining a Serious Apology',
+          'Waving Back at Someone Waving Behind You', 'Dropping Your Phone Directly on Your Nose', 'Biting Your Own Cheek While Chewing', 'Pulling a Door That Clearly Says PUSH',
+          'Doing the Side-Step Dance With a Stranger in a Hallway', 'Voice Cracking Mid-Argument', 'Hiccups That Last for 3 Hours', 'Fake Yawning to Escape a Boring Conversation',
+          'Holding in a Cough in a Dead-Silent Exam Hall', 'Spilling Coffee on a White Shirt 5 Minutes Before a Meeting', 'Static Shock From Touching a Car Door', 'Getting Trapped in a Revolving Door',
+          'Reading Shampoo Ingredients Because You Forgot Your Phone', 'Pouring Milk Before the Cereal Like a Psychopath', 'Eating Shredded Cheese Straight From the Bag at 2 AM', 'Having a Full Conversation With a Street Dog',
+          'Saying "You Too!" When the Waiter Says "Enjoy Your Meal"', 'Pretending to Check Your Phone to Avoid Eye Contact', 'Sock Slowly Sliding Off Inside Your Shoe', 'Wet Sleeves After Washing Your Face',
+          'Wired Earphones Tied in a Quantum Knot', 'Stepping in a Mystery Wet Puddle Wearing Fresh Socks', 'Setting 15 Alarms and Waking Up After All of Them', 'Phantom Phone Vibration in Your Pocket',
+          'Forgetting Someone’s Name 0.5 Seconds After Shaking Hands', 'Winning a Fake Argument in the Shower', 'Tripping Over Air on a Completely Flat Floor', 'Accidental Front Camera Angle From Below',
+          'Eating Extra Spicy Food and Questioning Your Life Choices', 'Microwaving Food That’s Lava Outside and Frozen Inside', 'Wearing Your T-Shirt Inside Out All Day', 'A Squirrel Plotting World Domination',
+          'Goose Chasing You for No Reason', 'Toaster Popping Up and Giving You a Heart Attack', 'Trying to Whisper Quietly and Sounding Louder', 'Walking Into a Glass Door Because It Was Too Clean',
+          'Putting Your Phone in the Fridge and Milk on the Charger', 'Searching for Your Glasses While Wearing Them', 'Calling Your Teacher "Mom"', 'Saying "Present" When Someone Else’s Name Is Called',
+          'Pretending to Laugh Because You Didn’t Hear the Joke Twice', 'Eating a Chip Loudly During a Quiet Movie Scene', 'Zipper Stuck Right Before Leaving the House', 'Hair Standing Up From Static Electricity',
+          'Trying to Look Cool While Choking on Water', 'Opening the Fridge 5 Times Expecting New Food to Appear', 'Petting a Dog and Ignoring Its Owner', 'Standing Awkwardly While People Sing Happy Birthday to You',
+          'Falling Asleep on the Bus and Missing Your Stop by 10 km', 'Trying to Catch a Falling Phone and Kicking It Across the Room', 'Smelling Milk to Check If It’s Expired and Regretting It', 'Accidentally Turning on Flashlight in a Dark Theater',
+          'Writing a Long Rant and Deleting It to Reply "Okay"', 'Using a Calculator to Check What 7 + 5 Is', 'Turning Down the Car Radio to See Street Signs Better', 'Sitting in a Parked Car for 20 Minutes After Arriving Home',
+          'A Duck Wearing Tiny Boots', 'Potato That Looks Like a Celebrity', 'Losing the Remote While Sitting on It', 'Sneezing and Farting at the Exact Same Time',
+          'Trying to Act Normal After Dropping a Glass in a Restaurant', 'Getting Your Sleeve Caught on a Door Handle', 'Chasing a Rolling Coin Down a Crowded Street', 'Attempting to Kill a Spider and Losing Sight of It',
+          'Drinking Orange Juice Right After Brushing Your Teeth', 'Waking Up Not Knowing What Year It Is', 'Telling a Story and Forgetting the Point Halfway Through', 'Giving a Thumbs Up When Someone Wants a High Five',
+          'Trying to Eat Spaghetti Without Slurping', 'A Cat Knocking a Full Glass Off the Table While Making Eye Contact'
         ]
       },
       {
-        id: 'tech_life',
-        name: 'Office & Tech/Dev Life',
+        id: 'office-dev',
+        group: 'goofy',
+        title: 'Office & Tech/Dev Life',
+        tagline: 'Corporate jargon, production bugs & meeting trauma',
+        accent: 'from-sky-500 to-cyan-600',
+        badgeColor: 'text-sky-300 bg-sky-500/15 border-sky-400/25',
         icon: '💻',
-        gradient: 'from-cyan-600 to-blue-700',
-        group: 'goofy',
         words: [
-          "Merge conflict on Friday at 5 PM",
-          "'It works on my machine' excuse",
-          "Pushing to main branch without testing",
-          "Forgetting `npm install` and wondering why app crashed",
-          "Stack Overflow copy-paste debugging",
-          "Joining Zoom call on mute while yelling at cat",
-          "Freezing camera and pretending connection dropped",
-          "Turning on camera with Zoom cat filter enabled",
-          "Writing 500 lines of code without saving once",
-          "Accidental `rm -rf /` heart attack",
-          "Waiting 45 minutes for Gradle build to finish",
-          "Docker container running out of memory",
-          "Kubernetes pod crashloop backoff",
-          "Writing Jira ticket for bug you caused yourself",
-          "Explaining to non-tech manager why simple change takes 3 weeks",
-          "Pretending to type furiously when boss walks by",
-          "Attending status meeting that could have been an email",
-          "Coffee machine breaking down during critical sprint crunch",
-          "Forgetting database password on production server",
-          "Using `console.log()` for entire debugging career",
-          "Accidentally sharing entire desktop screen during private chat",
-          "Leaving laptop unlucked near colleagues who set prank wallpaper",
-          "Writing regex that nobody on earth understands",
-          "Deleting node_modules folder to fix mystical bug",
-          "Waiting for client to reply to approval email for 3 weeks",
-          "Deploying code on Friday night and ruining weekend",
-          "Hardcoding API keys in frontend code",
-          "Using `any` type in TypeScript because of laziness",
-          "Writing unit test that passes 100% of time by accident",
-          "Forgetting to clear browser cache and blaming backend team"
+          '"It Works on My Machine"', 'Fixing a Bug in Production on Friday at 5:55 PM', '"Let’s Take This Offline"', 'Meeting That Should Have Been an Email',
+          '"Per My Last Email" Passive Aggression', 'Merge Conflict From Hell', 'Copying Code From Stack Overflow Without Reading It', 'Deploy and Pray',
+          'Camera Off Because Still in Pajamas', '"Quick 5-Minute Sync" That Lasts 90 Minutes', 'Jira Ticket With Zero Description', '"You’re on Mute!"',
+          'Production Server Catching Fire', 'Accidental Infinite Loop Crashing Chrome', 'Pushing Directly to Main Branch', 'Office Coffee Machine Out of Order',
+          '"Let’s Circle Back Next Quarter"', 'Synergy, Bandwidth, and Low-Hanging Fruit', 'Reply-All Email Apocalypse', 'Sharing Your Screen With 40 Embarrassing Tabs Open',
+          '99+ Unread Slack Messages After a 1-Hour Lunch', 'Dark Mode Supremacy', 'Spending 4 Hours Centering a Div in CSS', 'Missing a Single Semicolon',
+          'Git Force Push Deleting Everyone’s Work', 'Daily Standup Turning Into a 45-Minute Rant', 'Scope Creep Adding 12 New Features', 'Client Asking "Can You Make the Logo Pop?"',
+          'Laptop Fan Sounding Like a Boeing 747', 'Wi-Fi Disconnecting Right When It’s Your Turn to Speak', 'Mandatory HR "Fun Friday" Zoom Games', 'Appraisal Hike That Doesn’t Cover Inflation',
+          'Work From Home From Bed', 'LinkedIn Post Starting With "I’m Humbled to Announce"', 'ChatGPT Writing 90% of the Codebase', 'Legacy Code Written in 2004 by Someone Who Left',
+          'Clearing Browser Cache Magically Fixing Everything', '404 Page Not Found', 'Windows Blue Screen of Death', 'Two-Factor Authentication Loop From Hell',
+          'Password Must Contain a Number, Symbol, and Haiku', 'Intern Accidentally Dropping the Production Database', 'Pizza Party Instead of a Bonus', 'Out-of-Office Auto-Reply Activated',
+          'Calendar Invite With No Agenda', 'Rubber Duck Debugging', 'Regex That Nobody Understands Including the Author', 'Docker Container Refusing to Build',
+          'NPM Install Downloading Half the Internet', 'Saying "I’ll Look Into It" and Never Looking Into It', 'Pretending to Take Notes During a Meeting', 'Nodding Aggressively on a Video Call',
+          'Cat Walking Across the Keyboard During a Client Demo', 'Doorbell Ringing During a Presentation', 'Blaming the Latency on Your ISP', 'Writing "Fix Stuff" as a Git Commit Message',
+          'Turning a 2-Line Change Into a 50-File Pull Request', 'QA Tester Finding a Bug 1 Minute Before Release', 'Product Manager Saying "It’s Just a Small UI Tweak"', 'Senior Dev Deleting 1,000 Lines of Code',
+          'Stack Overflow Thread Closed as Duplicate', 'Documentation Last Updated 6 Years Ago', 'Localhost Working While Staging Explodes', 'Using `console.log("here")` 47 Times',
+          'Restarting the Server to Solve Memory Leaks', 'HR Sending a Wellness Email at 11 PM', 'Free Office Snacks Gone in 30 Seconds', 'Fighting Over the Only Quiet Meeting Room',
+          'Putting "Proficient in Excel" on Your Resume', 'Accidentally Unmuting While Complaining About the Call', 'Sending a Meme in the Official Company Channel', 'Friday Afternoon Ghost Town on Slack',
+          'Updating Windows Right Before a Demo', 'Battery Dying at 2% Without Warning', 'Forgetting Your Charger at the Office', 'Mouse Cursor Disappearing on Dual Monitors',
+          'Writing Code at 2 AM That Looks Like Hieroglyphics Tomorrow', 'Spaghetti Code', 'Hardcoding Credentials Temporarily Forever', 'Infinite Loading Spinner',
+          'Saying "Let’s Double-Click on That"', 'A/B Testing Button Shades of Blue', 'CEO Saying "We Are Like a Family"', 'Micromanager Checking Your Slack Status',
+          'Green Dot on Teams While You’re Asleep'
         ]
       },
       {
-        id: 'nostalgia_00_10',
-        name: '2000s & 2010s Nostalgia',
-        icon: '📼',
-        gradient: 'from-purple-600 to-pink-600',
+        id: 'nostalgia',
         group: 'goofy',
+        title: '2000s & 2010s Nostalgia',
+        tagline: 'Orkut scraps, cyber cafes, cartoons & early internet',
+        accent: 'from-amber-500 to-lime-500',
+        badgeColor: 'text-lime-300 bg-lime-500/15 border-lime-400/25',
+        icon: '🕹️',
         words: [
-          "Orkut testimonials and crush scraps",
-          "Nokia 3310 indestructible snake game",
-          "BlackBerry BBM PIN requests",
-          "MP3 player with 128MB storage",
-          "Wired landline telephone curly cord",
-          "Cartoon Network classic shows (Dexter, Johnny Bravo)",
-          "Pogo TV channel mystery shows",
-          "Shaktimaan spinning in sky",
-          "Sony TV CID doors breaking down & Daya",
-          "Writing secret notes in school diary and passing around",
-          "Sharing Bluetooth music files on Sony Ericsson phones",
-          "Rediffmail and Yahoo mail accounts",
-          "Dial-up internet screeching sound connecting",
-          "Encarta Encyclopedia CD-ROM school projects",
-          "Beyblade spinning top battles on floor",
-          "WWE SmackDown steel chair smackdown",
-          "WWE John Cena entrance theme song",
-          "Temple Run thumb sliding marathon",
-          "Fruit Ninja fruit slicing frenzy",
-          "Angry Birds green pig destruction",
-          "Flappy Bird rage quitting phone throw",
-          "Subway Surfers inspector chase",
-          "Gangnam Style horse dance craze",
-          "MTV Bakra prank show",
-          "Yamaha RX100 loud exhaust sound",
-          "Hero Honda Splendor mileage bragging",
-          "Cadbury 5 Star 'Ramesh & Suresh' ads",
-          "Dairy Milk 'Khaane waalon ko khane ka bahana' ads",
-          "Happydent white glowing teeth ad",
-          "Sprite 'Pyaar ki pyaas bujhaao' ads",
-          "Limca book of records obsession",
-          "Bournvita quiz contest school championship",
-          "Gel pens with glitter ink that ran out in 2 days",
-          "Scented eraser that smelled like strawberry",
-          "Compass box with 5 secret buttons and hidden compartments",
-          "Water-filled gel pencil pouch",
-          "Trading WWE cards during recess",
-          "Collecting Pokemon stickers from bubblegum packets",
-          "Tamagotchi virtual pet dying of neglect",
-          "Writing crush name in back of notebook with heart"
+          'Orkut Testimonials & Scraps', 'Blowing Into a Video Game Cartridge', 'Downloading Songs on PagalWorld at 2 KB/s', 'Nokia 3310 Indestructible Brick',
+          'Snake II High Score on a Nokia', 'Beyblade "Let It Rip!"', 'Tazos Inside Lay’s Packets', 'Pokémon Cards on the School Bus',
+          'Club Penguin', 'Temple Run & Subway Surfers', 'Facebook Poke Wars', 'Dubsmash & Musical.ly Videos',
+          'Fidget Spinners', '6-Second Vine Compilations', 'Sharing One Pair of Wired Earphones', 'iPod Shuffle Clipped to Your Shirt',
+          'Jio 4G Free Unlimited Data Launch', 'Pokémon Go Craze in Public Parks', 'Candy Crush Saga Invites From Relatives', 'Cringey WhatsApp Status Updates',
+          'Disney Channel India Wand ID', 'Best of Luck Nikki', 'Doraemon & Shinchan After School', 'Hot Wheels Loop Track Set',
+          'Hippo Baked Chips', 'Cadbury Bytes', 'Frooti Tetra Pak With Tiny Straw', 'Magic Pops Crackling Candy',
+          'Boomer Bubblegum', 'BSNL Broadband Dial-Up Screech', 'Cyber Cafe ₹20 Per Hour', 'GTA Vice City PANZER Tank Cheat',
+          'Road Rash Kicking Other Bikers', 'Counter-Strike 1.6 LAN Party', 'Miniclip Flash Games', 'Yahoo Messenger "BUZZ!!!"',
+          'BlackBerry Messenger (BBM) Ping', 'Flappy Bird Rage Quit', 'Gangnam Style Invisible Horse Dance', 'ALS Ice Bucket Challenge',
+          'Mannequin Challenge', 'Harlem Shake', 'Why This Kolaveri Di Viral Craze', 'IPL 2008 Inaugural Season',
+          'MS Dhoni’s 2011 World Cup Winning Six', 'Wearing a Krrish Mask', 'Dhoom Machale Polyphonic Ringtone', 'Hannah Montana',
+          'Wizards of Waverly Place', 'Ben 10 Omnitrix Watch', 'Power Rangers S.P.D.', 'Kochikame',
+          'Bob the Builder', 'Make Way for Noddy', 'Pogo & Cartoon Network', 'Pen Fighting on School Desks',
+          'FLAMES Relationship Calculator', 'School Slam Books', 'Reynolds 045 Fine Carbure Pen', 'Nataraj Geometry Box',
+          'Angry Birds Slingshot', 'Fruit Ninja', 'FarmVille on Facebook', 'Sony Ericsson Walkman Phone',
+          'Flip Phone Dramatic Hang-Up', 'Infrared File Transfer Holding Two Phones Together', 'Bluetooth Song Sharing Taking 15 Minutes', 'Burning MP3s Onto a Blank CD',
+          'Windows XP Bliss Green Hill Wallpaper', 'MS Paint Spray Can Art', 'Microsoft Word WordArt Rainbow Text', 'Clippy the Annoying Paperclip',
+          'Winamp Visualizer', 'VLC Media Player Traffic Cone', 'LimeWire Giving Your PC 400 Viruses', 'Internet Explorer Freezing Forever',
+          'DVD Scratches Skipping the Climax Scene', 'Cleaning a CD With Toothpaste', 'TV Dish Losing Signal When It Rains', 'Cable TV Aunties Walking Across the Screen',
+          'Center Fresh Tongue Twister Ads', 'Vodafone ZooZoos', 'Hutch Pug Following the Boy', 'Airtel Har Ek Friend Zaroori Hota Hai',
+          'Maggi 2-Minute Noodles Contest', 'Sunfeast Bounce Biscuits', 'Mango Bite Toffee', 'Kacha Mango Bite'
         ]
       },
       {
-        id: 'places_india',
-        name: 'Places & Landmarks in India',
-        icon: '🏛️',
-        gradient: 'from-amber-600 to-red-700',
+        id: 'places-india',
         group: 'goofy',
+        title: 'Places & Landmarks in India',
+        tagline: 'Iconic destinations, traffic jams & travel chaos',
+        accent: 'from-emerald-400 to-cyan-500',
+        badgeColor: 'text-emerald-200 bg-emerald-500/15 border-emerald-400/25',
+        icon: '🕌',
         words: [
-          "Taj Mahal Agra",
-          "Gateway of Mumbai",
-          "Marine Drive Mumbai",
-          "Silk Board Junction Bangalore",
-          "Goa Baga beach shack",
-          "Connaught Place Delhi",
-          "Chandni Chowk chaos",
-          "Marina Beach Chennai",
-          "Charminar Hyderabad",
-          "Hawa Mahal Jaipur",
-          "Varanasi Ghats Ganga Aarti",
-          "Golden Temple Amritsar",
-          "Backwaters of Alleppey Kerala",
-          "Kashmir Gulmarg snow slopes",
-          "Leh Ladakh mountain pass",
-          "Darjeeling tea gardens toy train",
-          "Mysore Palace illumination",
-          "Andaman Islands scuba diving",
-          "Rann of Kutch white salt desert",
-          "Sundarbans mangrove swamp",
-          "Udaipur Lake Palace",
-          "Qutub Minar Delhi",
-          "Red Fort Delhi",
-          "India Gate Delhi at night",
-          "Victoria Memorial Kolkata",
-          "Howrah Bridge traffic",
-          "Ellora and Ajanta Caves Aurangabad",
-          "Hampi ruins boulders",
-          "Ooty botanical gardens",
-          "Munnar misty tea hills",
-          "Coorg coffee plantations",
-          "Pondicherry French colony promenade",
-          "Kanyakumari southernmost tip sunset",
-          "Tirupati Balaji temple queue",
-          "Meenakshi Temple Madurai",
-          "Jog Falls Karnataka",
-          "Athirappilly waterfalls Kerala",
-          "Manali Rohtang Pass",
-          "Rishikesh river rafting Ganges",
-          "Dharamshala McLeod Ganj"
+          'Silk Board Traffic Jam in Bengaluru', 'Mumbai Local Train at 9 AM Rush Hour', 'Goa Trip That Never Leaves the WhatsApp Group', 'Manali Snowfall Instagram Reel',
+          'Taj Mahal Tourist Pinching the Dome', 'Varanasi Ganga Aarti', 'Jaipur Hawa Mahal', 'Kerala Houseboat in Alleppey',
+          'Ladakh Royal Enfield Bullet Bike Trip', 'Delhi Connaught Place', 'Pondicherry French Quarter', 'Kasol Cafe Hopping',
+          'Munnar Tea Gardens', 'Marine Drive Queen’s Necklace (Mumbai)', 'Cubbon Park Sunday Morning (Bengaluru)', 'Baga Beach Shack (Goa)',
+          'Pangong Lake 3 Idiots Spot', 'Hampi Chariot Ruins', 'Rann of Kutch White Desert', 'Mysore Palace Illuminated at Night',
+          'Rishikesh River Rafting', 'Coorg Misty Coffee Estates', 'Gateway of India', 'India Gate Midnight Ice Cream',
+          'Qutub Minar', 'Red Fort', 'Golden Temple Langar (Amritsar)', 'Charminar (Hyderabad)',
+          'Howrah Bridge (Kolkata)', 'Victoria Memorial', 'Meenakshi Temple (Madurai)', 'Marina Beach (Chennai)',
+          'Ooty Nilgiri Toy Train', 'Kodaikanal', 'Wayanad', 'Fort Kochi Chinese Fishing Nets',
+          'Athirappilly Baahubali Waterfalls', 'Varkala Cliff', 'Mahabalipuram Shore Temple', 'Gokarna Om Beach',
+          'Jog Falls', 'Chikmagalur', 'Udaipur Lake Pichola', 'Jaisalmer Thar Desert Camel Safari',
+          'Jodhpur Blue City', 'Rohtang Pass Traffic Jam', 'Shimla Mall Road', 'Spiti Valley',
+          'Dal Lake Shikara Ride (Srinagar)', 'Gulmarg Gondola', 'Darjeeling Tea Estates', 'Gangtok MG Marg',
+          'Cherrapunji Living Root Bridges', 'Kaziranga One-Horned Rhino Safari', 'Andaman Radhanagar Beach', 'Konark Sun Temple',
+          'Lonavala Maggi in the Rain', 'Mahabaleshwar Strawberries', 'Ajanta and Ellora Caves', 'Sanchi Stupa',
+          'Khajuraho Temples', 'Bandipur Tiger Reserve', 'Jim Corbett National Park', 'Sundarbans Mangrove Forest',
+          'Kanyakumari Sunrise & Sunset', 'Rameswaram Pamban Bridge', 'Dhanushkodi Ghost Town', 'Nandi Hills Sunrise Traffic',
+          'Koramangala Startup Cafe', 'Indiranagar 100 Feet Road', 'Bandra Bandstand Outside Mannat', 'Juhu Beach Pav Bhaji',
+          'Chandni Chowk Paratha Wali Gali', 'Hauz Khas Village', 'Sarojini Nagar Bargaining Battlefield', 'Cyber Hub Gurugram',
+          'Hitech City Hyderabad', 'Park Street Kolkata', 'Marine Lines Mumbai', 'Kovalam Lighthouse Beach',
+          'Matheran No-Car Hill Station', 'Mount Abu', 'Pushkar Camel Fair', 'Auroville Golden Globe',
+          'Tawang Monastery', 'Ziro Valley Music Festival', 'Diu Beach', 'Lakshadweep Coral Islands'
         ]
       }
     ];
 
-    // --- APP STATE MANAGER ---
-    class HeadsUpApp {
-      constructor() {
-        this.sound = new SoundEngine();
-        this.currentScreen = 'home'; // home, category, game, review
-        this.selectedCategory = null;
-        this.timerDuration = 60; // default 60s
-        this.flipTilt = false;
-        
-        // Game state
-        this.words = [];
-        this.currentIndex = 0;
-        this.score = 0;
-        this.correctWords = [];
-        this.passedWords = [];
-        this.timeLeft = 60;
-        this.timerInterval = null;
-        this.isPlaying = false;
-        
-        // Tilt sensors
-        this.isCalibrated = false;
-        this.neutralBeta = 0; // forward/backward tilt
-        this.tiltTriggered = false;
-        this.boundHandleOrientation = this.handleOrientation.bind(this);
+    // =========================================================================
+    // 2. GAME STATE & PERSISTENCE
+    // =========================================================================
+    const STATE = {
+      duration: 60,
+      flipTilt: false,
+      soundEnabled: true,
+      activeFilter: 'all',
+      selectedCategory: null,
+      deckQueue: [],
+      usedWordsByCat: {}, // Tracks used words per category so "Play Again" prioritizes fresh words
+      currentWord: '',
+      score: 0,
+      roundHistory: [], // { word: string, status: 'correct' | 'pass' }
+      timeLeft: 60,
+      timerInterval: null,
+      countdownInterval: null,
+      isPlaying: false,
+      isTransitioning: false,
+      tiltNeutral: true, // Prevents rapid multi-triggering from one nod
+      customWords: []
+    };
 
-        this.loadCustomDeckFromStorage();
-        this.render();
-      }
+    const STORAGE_KEY_CUSTOM = 'headsup_custom_words_v1';
+    const STORAGE_KEY_SETTINGS = 'headsup_settings_v1';
 
-      loadCustomDeckFromStorage() {
-        try {
-          const stored = localStorage.getItem('headsup_custom_deck');
-          if (stored) {
-            const list = JSON.parse(stored);
-            if (list && list.length > 0) {
-              // Add or update custom category
-              let customCat = CATEGORIES.find(c => c.id === 'custom');
-              if (!customCat) {
-                customCat = {
-                  id: 'custom',
-                  name: 'Custom Inside Jokes',
-                  icon: '✨',
-                  gradient: 'from-purple-500 to-pink-600',
-                  group: 'custom',
-                  words: list
-                };
-                CATEGORIES.push(customCat);
-              } else {
-                customCat.words = list;
-              }
-            }
-          }
-        } catch(e) {
-          console.error("Failed to load custom deck", e);
+    // Load saved settings & custom words on startup
+    function loadPersistedData() {
+      try {
+        const savedWords = localStorage.getItem(STORAGE_KEY_CUSTOM);
+        if (savedWords) {
+          STATE.customWords = JSON.parse(savedWords);
         }
+        const savedSettings = localStorage.getItem(STORAGE_KEY_SETTINGS);
+        if (savedSettings) {
+          const parsed = JSON.parse(savedSettings);
+          if ([30, 60, 90, 120].includes(parsed.duration)) STATE.duration = parsed.duration;
+          if (typeof parsed.flipTilt === 'boolean') STATE.flipTilt = parsed.flipTilt;
+          if (typeof parsed.soundEnabled === 'boolean') STATE.soundEnabled = parsed.soundEnabled;
+        }
+      } catch (e) {
+        console.warn('LocalStorage unavailable:', e);
       }
+      applySettingsUI();
+    }
 
-      toggleSound() {
-        this.sound.enabled = !this.sound.enabled;
-        const onIcon = document.getElementById('soundOnIcon');
-        const offIcon = document.getElementById('soundOffIcon');
-        if (this.sound.enabled) {
-          onIcon.classList.remove('hidden');
-          offIcon.classList.add('hidden');
+    function saveSettings() {
+      try {
+        localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify({
+          duration: STATE.duration,
+          flipTilt: STATE.flipTilt,
+          soundEnabled: STATE.soundEnabled
+        }));
+      } catch (e) {}
+    }
+
+    function applySettingsUI() {
+      // Duration buttons
+      document.querySelectorAll('.dur-btn').forEach(btn => {
+        const t = Number(btn.dataset.time);
+        if (t === STATE.duration) {
+          btn.className = 'dur-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow';
         } else {
-          onIcon.classList.add('hidden');
-          offIcon.classList.remove('hidden');
+          btn.className = 'dur-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white';
         }
-      }
+      });
 
-      openCustomModal() {
-        const modal = document.getElementById('customModal');
-        const textarea = document.getElementById('customWordsInput');
-        const customCat = CATEGORIES.find(c => c.id === 'custom');
-        textarea.value = customCat ? customCat.words.join('\n') : '';
-        this.updateCustomWordBadge();
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        
-        textarea.oninput = () => this.updateCustomWordBadge();
-      }
+      // Flip Tilt switch
+      const flipCheckbox = document.getElementById('toggle-flip-tilt');
+      flipCheckbox.checked = STATE.flipTilt;
+      updateTiltHintLabels();
 
-      updateCustomWordBadge() {
-        const textarea = document.getElementById('customWordsInput');
-        const badge = document.getElementById('customWordCountBadge');
-        const lines = textarea.value.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-        badge.innerText = `${lines.length} word${lines.length === 1 ? '' : 's'} added`;
-      }
+      // Sound icon
+      document.getElementById('icon-sound-on').classList.toggle('hidden', !STATE.soundEnabled);
+      document.getElementById('icon-sound-off').classList.toggle('hidden', STATE.soundEnabled);
+    }
 
-      closeCustomModal() {
-        const modal = document.getElementById('customModal');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-      }
-
-      clearCustomDeck() {
-        document.getElementById('customWordsInput').value = '';
-        this.updateCustomWordBadge();
-      }
-
-      saveCustomDeck() {
-        const textarea = document.getElementById('customWordsInput');
-        const words = textarea.value.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-        if (words.length === 0) {
-          alert("Please add at least one word!");
-          return;
-        }
-        localStorage.setItem('headsup_custom_deck', JSON.stringify(words));
-        
-        let customCat = CATEGORIES.find(c => c.id === 'custom');
-        if (!customCat) {
-          customCat = {
-            id: 'custom',
-            name: 'Custom Inside Jokes',
-            icon: '✨',
-            gradient: 'from-purple-500 to-pink-600',
-            group: 'custom',
-            words: words
-          };
-          CATEGORIES.push(customCat);
-        } else {
-          customCat.words = words;
-        }
-
-        this.closeCustomModal();
-        this.render();
-      }
-
-      goHome() {
-        this.stopGame();
-        this.currentScreen = 'home';
-        this.render();
-      }
-
-      selectCategory(catId) {
-        const cat = CATEGORIES.find(c => c.id === catId);
-        if (!cat || cat.words.length === 0) {
-          if (catId === 'custom') {
-            this.openCustomModal();
-          } else {
-            alert("This category is currently empty!");
-          }
-          return;
-        }
-        this.selectedCategory = cat;
-        this.currentScreen = 'category';
-        this.render();
-      }
-
-      setTimer(seconds) {
-        this.timerDuration = seconds;
-        // update active buttons in DOM if present
-        document.querySelectorAll('.timer-btn').forEach(btn => {
-          if (parseInt(btn.dataset.time) === seconds) {
-            btn.className = "timer-btn flex-1 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition transform scale-105";
-          } else {
-            btn.className = "timer-btn flex-1 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-300 font-medium text-sm hover:border-slate-700 transition";
-          }
-        });
-      }
-
-      toggleFlipTilt() {
-        this.flipTilt = !this.flipTilt;
-        const checkbox = document.getElementById('flipTiltCheckbox');
-        if (checkbox) checkbox.checked = this.flipTilt;
-      }
-
-      async startGame() {
-        // Request motion permission on iOS if needed
-        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-          try {
-            const response = await DeviceOrientationEvent.requestPermission();
-            if (response !== 'granted') {
-              alert("Motion permission denied. You can still use tap buttons or keyboard arrows!");
-            }
-          } catch(e) {
-            console.error(e);
-          }
-        }
-
-        this.score = 0;
-        this.correctWords = [];
-        this.passedWords = [];
-        this.words = [...this.selectedCategory.words].sort(() => Math.random() - 0.5);
-        this.currentIndex = 0;
-        this.timeLeft = this.timerDuration;
-        this.currentScreen = 'game';
-        this.isPlaying = true;
-        this.isCalibrated = false;
-        this.tiltTriggered = false;
-
-        this.render();
-        this.startCountdownAndGame();
-      }
-
-      startCountdownAndGame() {
-        const countdownEl = document.getElementById('countdownOverlay');
-        const countNumber = document.getElementById('countNumber');
-        let count = 3;
-
-        this.sound.playTick();
-        countNumber.innerText = count;
-
-        const countInterval = setInterval(() => {
-          count--;
-          if (count > 0) {
-            this.sound.playTick();
-            countNumber.innerText = count;
-          } else if (count === 0) {
-            this.sound.playCorrect();
-            countNumber.innerText = "GO!";
-          } else {
-            clearInterval(countInterval);
-            countdownEl.classList.add('hidden');
-            this.beginRoundTimer();
-            this.initTiltSensors();
-          }
-        }, 1000);
-      }
-
-      beginRoundTimer() {
-        this.timerInterval = setInterval(() => {
-          this.timeLeft--;
-          const timerEl = document.getElementById('gameTimer');
-          if (timerEl) timerEl.innerText = this.timeLeft;
-
-          if (this.timeLeft <= 5 && this.timeLeft > 0) {
-            this.sound.playTick();
-          }
-
-          if (this.timeLeft <= 0) {
-            this.endGame();
-          }
-        }, 1000);
-      }
-
-      initTiltSensors() {
-        window.addEventListener('deviceorientation', this.boundHandleOrientation, true);
-      }
-
-      stopGame() {
-        this.isPlaying = false;
-        if (this.timerInterval) {
-          clearInterval(this.timerInterval);
-          this.timerInterval = null;
-        }
-        window.removeEventListener('deviceorientation', this.boundHandleOrientation, true);
-      }
-
-      handleOrientation(event) {
-        if (!this.isPlaying) return;
-        const beta = event.beta; // forward/backward tilt (-180 to 180)
-        if (beta === null || beta === undefined) return;
-
-        if (!this.isCalibrated) {
-          this.neutralBeta = beta;
-          this.isCalibrated = true;
-          return;
-        }
-
-        const diff = beta - this.neutralBeta;
-        const threshold = 25; // degrees tilt threshold
-
-        if (!this.tiltTriggered) {
-          let isDown = diff > threshold; // tilted screen down (forehead down)
-          let isUp = diff < -threshold;   // tilted screen up (forehead up)
-
-          if (this.flipTilt) {
-            let temp = isDown;
-            isDown = isUp;
-            isUp = temp;
-          }
-
-          if (isDown) {
-            this.tiltTriggered = true;
-            this.markCorrect();
-            setTimeout(() => { this.tiltTriggered = false; }, 800); // cooldown
-          } else if (isUp) {
-            this.tiltTriggered = true;
-            this.markPass();
-            setTimeout(() => { this.tiltTriggered = false; }, 800); // cooldown
-          }
-        }
-      }
-
-      markCorrect() {
-        if (!this.isPlaying) return;
-        this.sound.playCorrect();
-        const word = this.words[this.currentIndex];
-        this.score++;
-        this.correctWords.push(word);
-        this.flashScreen('correct');
-        this.nextWord();
-      }
-
-      markPass() {
-        if (!this.isPlaying) return;
-        this.sound.playPass();
-        const word = this.words[this.currentIndex];
-        this.passedWords.push(word);
-        this.flashScreen('pass');
-        this.nextWord();
-      }
-
-      nextWord() {
-        this.currentIndex++;
-        if (this.currentIndex >= this.words.length) {
-          // Shuffle and loop if words run out
-          this.words = [...this.selectedCategory.words].sort(() => Math.random() - 0.5);
-          this.currentIndex = 0;
-        }
-        const wordEl = document.getElementById('currentWordCard');
-        if (wordEl) {
-          wordEl.innerText = this.words[this.currentIndex];
-        }
-        const scoreEl = document.getElementById('liveScore');
-        if (scoreEl) {
-          scoreEl.innerText = this.score;
-        }
-      }
-
-      flashScreen(type) {
-        const flashEl = document.getElementById('screenFlash');
-        if (!flashEl) return;
-        flashEl.className = `absolute inset-0 pointer-events-none z-30 transition-colors duration-200 ${type === 'correct' ? 'bg-emerald-500/30' : 'bg-rose-500/30'}`;
-        setTimeout(() => {
-          flashEl.className = "absolute inset-0 pointer-events-none z-30";
-        }, 200);
-      }
-
-      endGame() {
-        this.stopGame();
-        this.sound.playBuzzer();
-        this.currentScreen = 'review';
-        this.render();
-      }
-
-      // --- RENDER ROUTER ---
-      render() {
-        const main = document.getElementById('mainContent');
-        main.innerHTML = '';
-
-        if (this.currentScreen === 'home') {
-          main.innerHTML = this.renderHomeScreen();
-        } else if (this.currentScreen === 'category') {
-          main.innerHTML = this.renderCategoryScreen();
-        } else if (this.currentScreen === 'game') {
-          main.innerHTML = this.renderGameScreen();
-          this.attachGameKeyListeners();
-        } else if (this.currentScreen === 'review') {
-          main.innerHTML = this.renderReviewScreen();
-        }
-      }
-
-      renderHomeScreen() {
-        return `
-          <div class="space-y-8">
-            <!-- Hero banner -->
-            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-900/60 via-purple-900/60 to-slate-900 border border-slate-800 p-8 md:p-12 shadow-2xl">
-              <div class="relative z-10 max-w-2xl">
-                <span class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold mb-4">
-                  <span>🎉 Over 1,000+ Hilarious Prompts</span>
-                </span>
-                <h2 class="text-3xl md:text-5xl font-black tracking-tight text-white mb-4">Ready for the ultimate forehead guessing party?</h2>
-                <p class="text-slate-300 text-sm md:text-base leading-relaxed mb-6">Pick a category, hold your phone to your forehead, tilt down when correct and tilt up to pass! Works seamlessly on phones and laptops.</p>
-                <div class="flex flex-wrap gap-4">
-                  <button onclick="app.selectCategory('superstars')" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 hover:opacity-95 transition flex items-center space-x-2">
-                    <span>🚀 Quick Play (Superstars)</span>
-                  </button>
-                  <button onclick="app.openCustomModal()" class="px-6 py-3 rounded-2xl bg-slate-900 border border-slate-700 text-slate-200 font-bold text-sm hover:border-slate-500 transition">
-                    ✨ Add Custom Deck
-                  </button>
-                </div>
-              </div>
-              <div class="absolute -right-10 -bottom-10 opacity-10 pointer-events-none">
-                <svg class="w-96 h-96 text-indigo-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg>
-              </div>
-            </div>
-
-            <!-- Category Groups -->
-            <div>
-              <h3 class="text-xl font-extrabold text-white mb-6 flex items-center space-x-2">
-                <span>🔥 Choose a Category</span>
-              </h3>
-              
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                ${CATEGORIES.map(cat => `
-                  <div onclick="app.selectCategory('${cat.id}')" class="group relative bg-slate-900/80 hover:bg-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-6 cursor-pointer transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10 flex flex-col justify-between overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${cat.gradient} opacity-5 rounded-full blur-2xl group-hover:opacity-15 transition"></div>
-                    <div class="flex items-start justify-between mb-4">
-                      <div class="w-12 h-12 rounded-2xl bg-gradient-to-br ${cat.gradient} flex items-center justify-center text-2xl shadow-lg">
-                        ${cat.icon}
-                      </div>
-                      <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 group-hover:text-indigo-400 uppercase tracking-wider transition">Play Deck</span>
-                    </div>
-                    <div>
-                      <h4 class="text-lg font-bold text-white group-hover:text-indigo-300 transition mb-1">${cat.name}</h4>
-                      <p class="text-xs text-slate-400">Curated fun & goofy prompts</p>
-                    </div>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          </div>
-        `;
-      }
-
-      renderCategoryScene() {} // alias
-
-      renderCategoryScreen() {
-        const cat = this.selectedCategory;
-        return `
-          <div class="max-w-xl mx-auto w-full space-y-6 pt-4 pb-12">
-            <button onclick="app.goHome()" class="inline-flex items-center space-x-2 text-sm text-slate-400 hover:text-white transition">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-              <span>Back to Categories</span>
-            </button>
-
-            <!-- Category Card Header -->
-            <div class="rounded-3xl bg-slate-900 border border-slate-800 p-8 text-center relative overflow-hidden">
-              <div class="absolute inset-0 bg-gradient-to-br ${cat.gradient} opacity-10"></div>
-              <div class="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-br ${cat.gradient} flex items-center justify-center text-4xl mb-4 shadow-2xl">
-                ${cat.icon}
-              </div>
-              <h2 class="text-2xl md:text-3xl font-black text-white mb-2">${cat.name}</h2>
-              <p class="text-sm text-slate-400">${cat.words.length} hilarious prompts ready</p>
-            </div>
-
-            <!-- Settings -->
-            <div class="rounded-3xl bg-slate-900 border border-slate-800 p-6 space-y-6">
-              <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Round Duration</label>
-                <div class="flex space-x-3">
-                  <button onclick="app.setTimer(30)" data-time="30" class="timer-btn flex-1 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-300 font-medium text-sm hover:border-slate-700 transition">30s</button>
-                  <button onclick="app.setTimer(60)" data-time="60" class="timer-btn flex-1 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition transform scale-105">60s</button>
-                  <button onclick="app.setTimer(90)" data-time="90" class="timer-btn flex-1 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-300 font-medium text-sm hover:border-slate-700 transition">90s</button>
-                  <button onclick="app.setTimer(120)" data-time="120" class="timer-btn flex-1 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-300 font-medium text-sm hover:border-slate-700 transition">120s</button>
-                </div>
-              </div>
-
-              <div class="flex items-center justify-between pt-2 border-t border-slate-800">
-                <div>
-                  <h4 class="text-sm font-bold text-white">Flip Tilt Direction</h4>
-                  <p class="text-xs text-slate-400">If tilt scores the wrong way on your phone</p>
-                </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" id="flipTiltCheckbox" onchange="app.toggleFlipTilt()" class="sr-only peer" ${this.flipTilt ? 'checked' : ''}>
-                  <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                </label>
-              </div>
-            </div>
-
-            <!-- Ready Button -->
-            <button onclick="app.startGame()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white font-extrabold text-lg shadow-xl shadow-indigo-600/30 hover:opacity-95 transition transform active:scale-95">
-              I'M READY! 🚀
-            </button>
-          </div>
-        `;
-      }
-
-      renderGameScreen() {
-        const currentWord = this.words[this.currentIndex] || "Ready";
-        return `
-          <div class="fixed inset-0 bg-slate-950 z-40 flex flex-col justify-between p-6 select-none overflow-hidden">
-            <!-- Screen flash for correct/pass -->
-            <div id="screenFlash" class="absolute inset-0 pointer-events-none z-30"></div>
-
-            <!-- Top bar -->
-            <div class="flex items-center justify-between z-20">
-              <button onclick="app.goHome()" class="px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 hover:text-white">Quit</button>
-              <div class="flex items-center space-x-4 bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl">
-                <span class="text-xs text-slate-400 font-semibold">SCORE: <strong id="liveScore" class="text-emerald-400 text-base">${this.score}</strong></span>
-                <span class="text-slate-700">|</span>
-                <span class="text-xs text-slate-400 font-semibold">TIME: <strong id="gameTimer" class="text-indigo-400 text-base">${this.timeLeft}</strong>s</span>
-              </div>
-            </div>
-
-            <!-- Center Countdown Overlay -->
-            <div id="countdownOverlay" class="absolute inset-0 bg-slate-950/95 z-50 flex flex-col items-center justify-center p-6">
-              <div class="text-center space-y-4">
-                <span class="text-xs font-bold uppercase tracking-widest text-indigo-400">Put phone to your forehead in 3... 2... 1...</span>
-                <div id="countNumber" class="text-8xl md:text-9xl font-black text-white animate-pulse">3</div>
-                <p class="text-sm text-slate-400 max-w-xs mx-auto">Tilt down when correct • Tilt up to pass</p>
-              </div>
-            </div>
-
-            <!-- Word Card Display -->
-            <div class="flex-1 flex flex-col items-center justify-center text-center px-4 z-20">
-              <span class="text-xs font-bold uppercase tracking-widest text-indigo-400 mb-2">${this.selectedCategory.name}</span>
-              <h2 id="currentWordCard" class="text-5xl md:text-8xl font-black tracking-tight text-white drop-shadow-lg leading-tight">${currentWord}</h2>
-            </div>
-
-            <!-- Bottom action buttons / tap zones -->
-            <div class="grid grid-cols-2 gap-4 z-20 max-w-2xl mx-auto w-full">
-              <button onclick="app.markPass()" class="py-5 rounded-2xl bg-rose-600/20 border border-rose-500/30 hover:bg-rose-600/30 text-rose-300 font-extrabold text-lg transition active:scale-95 flex items-center justify-center space-x-2">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
-                <span>PASS (Tilt Up)</span>
-              </button>
-              <button onclick="app.markCorrect()" class="py-5 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 hover:bg-emerald-600/30 text-emerald-300 font-extrabold text-lg transition active:scale-95 flex items-center justify-center space-x-2">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
-                <span>CORRECT! (Tilt Down)</span>
-              </button>
-            </div>
-          </div>
-        `;
-      }
-
-      renderReviewScreen() {
-        return `
-          <div class="max-w-xl mx-auto w-full space-y-6 pt-4 pb-12">
-            <!-- Header card -->
-            <div class="rounded-3xl bg-slate-900 border border-slate-800 p-8 text-center relative overflow-hidden">
-              <div class="absolute inset-0 bg-gradient-to-br ${this.selectedCategory.gradient} opacity-10"></div>
-              <span class="text-xs font-bold uppercase tracking-widest text-indigo-400 mb-1 block">Round Complete! 🎉</span>
-              <h2 class="text-4xl md:text-5xl font-black text-white mb-2">${this.score} Correct</h2>
-              <p class="text-sm text-slate-400">Great job playing ${this.selectedCategory.name}!</p>
-            </div>
-
-            <!-- Words Breakdown -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <!-- Correct words -->
-              <div class="rounded-2xl bg-slate-900 border border-slate-800 p-5 space-y-3">
-                <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center justify-between">
-                  <span>✅ Correct (${this.correctWords.length})</span>
-                </h4>
-                <div class="max-h-60 overflow-y-auto space-y-1.5 pr-2">
-                  ${this.correctWords.length === 0 ? '<p class="text-xs text-slate-500 italic">No words guessed correct.</p>' : this.correctWords.map(w => `
-                    <div class="px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-200 text-sm font-medium">${w}</div>
-                  `).join('')}
-                </div>
-              </div>
-
-              <!-- Passed words -->
-              <div class="rounded-2xl bg-slate-900 border border-slate-800 p-5 space-y-3">
-                <h4 class="text-xs font-bold uppercase tracking-wider text-rose-400 flex items-center justify-between">
-                  <span>❌ Passed (${this.passedWords.length})</span>
-                </h4>
-                <div class="max-h-60 overflow-y-auto space-y-1.5 pr-2">
-                  ${this.passedWords.length === 0 ? '<p class="text-xs text-slate-500 italic">No words passed!</p>' : this.passedWords.map(w => `
-                    <div class="px-3 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-200 text-sm font-medium">${w}</div>
-                  `).join('')}
-                </div>
-              </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="flex space-x-4">
-              <button onclick="app.goHome()" class="flex-1 py-4 rounded-2xl bg-slate-900 border border-slate-800 text-white font-bold text-sm hover:border-slate-700 transition">
-                Home
-              </button>
-              <button onclick="app.startGame()" class="flex-1 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition">
-                Play Again 🚀
-              </button>
-            </div>
-          </div>
-        `;
-      }
-
-      attachGameKeyListeners() {
-        window.onkeydown = (e) => {
-          if (!this.isPlaying) return;
-          if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-            this.markCorrect();
-          } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-            this.markPass();
-          }
-        };
+    function updateTiltHintLabels() {
+      const hint = document.getElementById('tilt-hint-label');
+      const readyCorrect = document.getElementById('ready-correct-dir');
+      const readyPass = document.getElementById('ready-pass-dir');
+      if (STATE.flipTilt) {
+        hint.textContent = 'Flipped: Tilt Up = Correct • Tilt Down = Pass';
+        readyCorrect.textContent = 'Tilt Up';
+        readyPass.textContent = 'Tilt Down';
+      } else {
+        hint.textContent = 'Tilt Down = Correct • Tilt Up = Pass';
+        readyCorrect.textContent = 'Tilt Down';
+        readyPass.textContent = 'Tilt Up';
       }
     }
 
-    // Initialize application instance
-    const app = new HeadsUpApp();
+    // =========================================================================
+    // 3. WEB AUDIO API SOUND SYNTHESIZER (Zero External Audio Dependencies)
+    // =========================================================================
+    let audioCtx = null;
+
+    function ensureAudioContext() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) audioCtx = new AudioContext();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playTone(type) {
+      if (!STATE.soundEnabled) return;
+      try {
+        ensureAudioContext();
+        if (!audioCtx) return;
+
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'tick') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(520, now);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+          osc.start(now);
+          osc.stop(now + 0.12);
+        } else if (type === 'go') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(780, now);
+          osc.frequency.setValueAtTime(1040, now + 0.08);
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+          osc.start(now);
+          osc.stop(now + 0.28);
+        } else if (type === 'correct') {
+          // Cheerful rising major third chime
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(587.33, now); // D5
+          osc.frequency.setValueAtTime(880, now + 0.09); // A5
+          gain.gain.setValueAtTime(0.22, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+          osc.start(now);
+          osc.stop(now + 0.32);
+        } else if (type === 'pass') {
+          // Soft descending whoosh tone
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(420, now);
+          osc.frequency.exponentialRampToValueAtTime(220, now + 0.2);
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+          osc.start(now);
+          osc.stop(now + 0.22);
+        } else if (type === 'warning') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(880, now);
+          gain.gain.setValueAtTime(0.09, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        } else if (type === 'timeup') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(300, now);
+          osc.frequency.linearRampToValueAtTime(180, now + 0.5);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+          osc.start(now);
+          osc.stop(now + 0.55);
+        }
+      } catch (e) {}
+    }
+
+    // =========================================================================
+    // 4. UI RENDERING & NAVIGATION
+    // =========================================================================
+    function showToast(message, variant = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const colors = variant === 'error'
+        ? 'bg-rose-950/95 border-rose-500/40 text-rose-200'
+        : variant === 'success'
+        ? 'bg-emerald-950/95 border-emerald-500/40 text-emerald-200'
+        : 'bg-slate-900/95 border-indigo-500/40 text-slate-100';
+
+      toast.className = `px-4 py-2.5 rounded-2xl border backdrop-blur-xl shadow-xl text-xs sm:text-sm font-medium animate-pop ${colors}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.25s ease';
+        setTimeout(() => toast.remove(), 260);
+      }, 2400);
+    }
+
+    function showView(viewId) {
+      ['view-home', 'view-ready', 'view-countdown', 'view-game', 'view-summary'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+      document.getElementById(viewId).classList.remove('hidden');
+    }
+
+    function openModal(modalId) {
+      if (modalId === 'modal-custom') {
+        document.getElementById('custom-words-input').value = STATE.customWords.join('\n');
+        updateCustomCountPreview();
+      }
+      document.getElementById(modalId).classList.remove('hidden');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.add('hidden');
+    }
+
+    function setDuration(seconds) {
+      STATE.duration = seconds;
+      saveSettings();
+      applySettingsUI();
+      playTone('tick');
+    }
+
+    function toggleFlipTilt(checked) {
+      STATE.flipTilt = checked;
+      saveSettings();
+      updateTiltHintLabels();
+      showToast(checked ? 'Tilt direction flipped' : 'Standard tilt direction restored');
+    }
+
+    function toggleSound() {
+      STATE.soundEnabled = !STATE.soundEnabled;
+      saveSettings();
+      applySettingsUI();
+      if (STATE.soundEnabled) playTone('tick');
+    }
+
+    function setFilter(group) {
+      STATE.activeFilter = group;
+      document.querySelectorAll('.filter-pill').forEach(pill => {
+        if (pill.dataset.filter === group) {
+          pill.className = 'filter-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-white text-slate-950 shadow transition';
+        } else {
+          pill.className = 'filter-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap glass-panel text-slate-300 hover:text-white transition';
+        }
+      });
+      renderCategories();
+    }
+
+    // Render Category Grid (STRICTLY NO WORD COUNTS SHOWN ON CARDS)
+    function renderCategories() {
+      const grid = document.getElementById('categories-grid');
+      const query = document.getElementById('search-decks').value.trim().toLowerCase();
+      grid.innerHTML = '';
+
+      // 1. Custom Deck Card (always visible when filter is 'all' or 'custom' and matches search)
+      const showCustom = (STATE.activeFilter === 'all' || STATE.activeFilter === 'custom') &&
+        ('custom inside jokes personalized words'.includes(query) || query === '');
+
+      if (showCustom) {
+        const hasWords = STATE.customWords.length > 0;
+        const customCard = document.createElement('div');
+        customCard.className = 'glass-panel rounded-3xl p-5 flex flex-col justify-between border border-emerald-500/30 bg-gradient-to-br from-emerald-950/40 to-slate-900/80 card-hover relative overflow-hidden group';
+        customCard.innerHTML = `
+          <div class="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-emerald-500/10 blur-xl group-hover:bg-emerald-500/20 transition"></div>
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-3">
+              <span class="text-2xl">✍️</span>
+              <span class="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full text-emerald-300 bg-emerald-500/15 border border-emerald-400/25">
+                Custom Deck
+              </span>
+            </div>
+            <h3 class="font-display font-bold text-lg text-white mb-1">Inside Jokes & Friends</h3>
+            <p class="text-xs text-slate-400 leading-relaxed mb-5">
+              Your own personalized names, party prompts & private jokes.
+            </p>
+          </div>
+          <div class="flex items-center gap-2 pt-2 border-t border-white/5">
+            <button onclick="openModal('modal-custom')" class="flex-1 py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold transition">
+              ${hasWords ? 'Edit Words' : 'Add Words'}
+            </button>
+            ${hasWords ? `
+              <button onclick="selectCustomCategory()" class="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/20 transition">
+                Play Deck
+              </button>
+            ` : ''}
+          </div>
+        `;
+        grid.appendChild(customCard);
+      }
+
+      // 2. Built-in Categories
+      const filtered = CATEGORIES.filter(cat => {
+        const matchesGroup = STATE.activeFilter === 'all' || cat.group === STATE.activeFilter;
+        const matchesQuery = !query ||
+          cat.title.toLowerCase().includes(query) ||
+          cat.tagline.toLowerCase().includes(query) ||
+          cat.group.toLowerCase().includes(query);
+        return matchesGroup && matchesQuery;
+      });
+
+      const groupLabels = {
+        desi: 'Desi Favourites',
+        classic: 'Classic Mix',
+        goofy: 'Goofy Zone'
+      };
+
+      filtered.forEach(cat => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.onclick = () => selectCategory(cat);
+        card.className = 'text-left glass-panel rounded-3xl p-5 flex flex-col justify-between hover:border-white/25 card-hover relative overflow-hidden group focus:outline-none focus:ring-2 focus:ring-indigo-500';
+        card.innerHTML = `
+          <div class="w-full">
+            <div class="flex items-center justify-between gap-2 mb-3.5">
+              <div class="w-11 h-11 rounded-2xl bg-gradient-to-br ${cat.accent} p-[1px] shadow-md">
+                <div class="w-full h-full rounded-[15px] bg-slate-950/85 flex items-center justify-center text-xl">
+                  ${cat.icon}
+                </div>
+              </div>
+              <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${cat.badgeColor}">
+                ${groupLabels[cat.group]}
+              </span>
+            </div>
+            <h3 class="font-display font-bold text-lg text-white group-hover:text-indigo-200 transition mb-1">
+              ${cat.title}
+            </h3>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              ${cat.tagline}
+            </p>
+          </div>
+          <div class="w-full mt-5 pt-3 border-t border-white/5 flex items-center justify-between text-xs font-semibold text-slate-300 group-hover:text-white transition">
+            <span>Tap to Play</span>
+            <svg class="w-4 h-4 text-indigo-400 transform group-hover:translate-x-1 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      if (grid.children.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full glass-panel rounded-3xl p-10 text-center">
+            <p class="text-slate-300 font-semibold mb-1">No matching categories found</p>
+            <p class="text-xs text-slate-400">Try clearing your search or switching tabs.</p>
+          </div>
+        `;
+      }
+    }
+
+    // =========================================================================
+    // 5. CUSTOM WORDS MANAGEMENT
+    // =========================================================================
+    function parseCustomInput(rawText) {
+      return rawText
+        .split(/[\n,]+/)
+        .map(w => w.trim())
+        .filter(w => w.length > 0);
+    }
+
+    function updateCustomCountPreview() {
+      const raw = document.getElementById('custom-words-input').value;
+      const list = parseCustomInput(raw);
+      document.getElementById('custom-editor-count').textContent = `${list.length} item${list.length === 1 ? '' : 's'} ready`;
+    }
+
+    function loadSampleCustomWords() {
+      const samples = [
+        "Rahul's Cancelled Goa Plan",
+        "Mom's 'Where Is Your Sweater?'",
+        "That One Awkward Zoom Call",
+        "Chai Break Squad",
+        "Splitwise Pending Request",
+        "Late Night Maggi Cravings",
+        "Sharma Ji Ka Beta",
+        "The Friend Who Never Replies"
+      ];
+      const textarea = document.getElementById('custom-words-input');
+      const existing = parseCustomInput(textarea.value);
+      const merged = Array.from(new Set([...existing, ...samples]));
+      textarea.value = merged.join('\n');
+      updateCustomCountPreview();
+      playTone('tick');
+    }
+
+    function clearCustomWords() {
+      document.getElementById('custom-words-input').value = '';
+      updateCustomCountPreview();
+    }
+
+    function saveCustomWords(playImmediately) {
+      const raw = document.getElementById('custom-words-input').value;
+      const parsed = parseCustomInput(raw);
+
+      if (playImmediately && parsed.length === 0) {
+        showToast('Add at least 1 word or inside joke first!', 'error');
+        return;
+      }
+
+      STATE.customWords = parsed;
+      try {
+        localStorage.setItem(STORAGE_KEY_CUSTOM, JSON.stringify(parsed));
+      } catch (e) {}
+
+      closeModal('modal-custom');
+      renderCategories();
+      showToast(`Saved ${parsed.length} custom prompt${parsed.length === 1 ? '' : 's'}`, 'success');
+
+      if (playImmediately) {
+        selectCustomCategory();
+      }
+    }
+
+    function selectCustomCategory() {
+      if (STATE.customWords.length === 0) {
+        openModal('modal-custom');
+        return;
+      }
+      selectCategory({
+        id: 'custom',
+        group: 'custom',
+        title: 'Custom Inside Jokes',
+        tagline: 'Your personalized party deck',
+        words: [...STATE.customWords]
+      });
+    }
+
+    // =========================================================================
+    // 6. GAMEPLAY FLOW, SHUFFLING, & iOS MOTION PERMISSION
+    // =========================================================================
+    function selectCategory(category) {
+      STATE.selectedCategory = category;
+      document.getElementById('ready-title').textContent = category.title;
+      document.getElementById('ready-tagline').textContent = category.tagline;
+      document.getElementById('ready-duration').textContent = `${STATE.duration}s`;
+      updateTiltHintLabels();
+      playTone('tick');
+      showView('view-ready');
+    }
+
+    function shuffleArray(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function buildShuffledDeck(category) {
+      if (!STATE.usedWordsByCat[category.id]) {
+        STATE.usedWordsByCat[category.id] = new Set();
+      }
+      const used = STATE.usedWordsByCat[category.id];
+      let unused = category.words.filter(w => !used.has(w));
+
+      // Reset pool if fewer than 10 fresh words remain
+      if (unused.length < 10) {
+        used.clear();
+        unused = [...category.words];
+      }
+      return shuffleArray(unused);
+    }
+
+    // Request iOS 13+ DeviceOrientation permission seamlessly on user click
+    async function requestMotionPermissionIfNeeded() {
+      try {
+        if (
+          typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function'
+        ) {
+          const response = await DeviceOrientationEvent.requestPermission();
+          if (response !== 'granted') {
+            showToast('Motion sensor denied — use screen buttons instead', 'info');
+          }
+        }
+      } catch (err) {
+        console.warn('DeviceOrientation permission error:', err);
+      }
+    }
+
+    // Attempt fullscreen on mobile for distraction-free forehead display
+    function tryEnterFullscreen() {
+      try {
+        const el = document.documentElement;
+        if (el.requestFullscreen && window.innerWidth < 1024 && !document.fullscreenElement) {
+          el.requestFullscreen().catch(() => {});
+        }
+      } catch (e) {}
+    }
+
+    function tryExitFullscreen() {
+      try {
+        if (document.fullscreenElement && document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+      } catch (e) {}
+    }
+
+    async function initiateCountdown() {
+      ensureAudioContext();
+      await requestMotionPermissionIfNeeded();
+      tryEnterFullscreen();
+
+      showView('view-countdown');
+      let count = 3;
+      const numEl = document.getElementById('countdown-number');
+      numEl.textContent = count;
+      playTone('tick');
+
+      clearInterval(STATE.countdownInterval);
+      STATE.countdownInterval = setInterval(() => {
+        count--;
+        if (count > 0) {
+          numEl.textContent = count;
+          numEl.classList.remove('animate-pop');
+          void numEl.offsetWidth;
+          numEl.classList.add('animate-pop');
+          playTone('tick');
+        } else {
+          clearInterval(STATE.countdownInterval);
+          playTone('go');
+          startRound();
+        }
+      }, 900);
+    }
+
+    function startRound() {
+      const cat = STATE.selectedCategory;
+      STATE.deckQueue = buildShuffledDeck(cat);
+      STATE.score = 0;
+      STATE.roundHistory = [];
+      STATE.timeLeft = STATE.duration;
+      STATE.isPlaying = true;
+      STATE.isTransitioning = false;
+      STATE.tiltNeutral = true;
+
+      document.getElementById('game-category-label').textContent = cat.title;
+      document.getElementById('game-score').textContent = '0';
+      updateTimerDisplay();
+
+      showView('view-game');
+      nextWord();
+
+      clearInterval(STATE.timerInterval);
+      STATE.timerInterval = setInterval(() => {
+        STATE.timeLeft--;
+        updateTimerDisplay();
+
+        if (STATE.timeLeft <= 10 && STATE.timeLeft > 0) {
+          playTone('warning');
+        }
+
+        if (STATE.timeLeft <= 0) {
+          finishRound();
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const timerEl = document.getElementById('game-timer');
+      const badgeEl = document.getElementById('timer-badge');
+      const iconEl = document.getElementById('timer-icon');
+      timerEl.textContent = STATE.timeLeft;
+
+      if (STATE.timeLeft <= 10) {
+        badgeEl.className = 'px-5 py-1.5 rounded-2xl bg-rose-500/25 border border-rose-500/50 backdrop-blur-md flex items-center gap-2 animate-pulse-fast';
+        timerEl.className = 'font-display font-extrabold text-2xl sm:text-3xl tabular-nums text-rose-300';
+        iconEl.className = 'w-4 h-4 text-rose-400';
+      } else {
+        badgeEl.className = 'px-5 py-1.5 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md flex items-center gap-2';
+        timerEl.className = 'font-display font-extrabold text-2xl sm:text-3xl tabular-nums text-white';
+        iconEl.className = 'w-4 h-4 text-indigo-400';
+      }
+    }
+
+    function nextWord() {
+      if (STATE.deckQueue.length === 0) {
+        // Refill seamlessly if player speeds through entire deck
+        STATE.deckQueue = shuffleArray(STATE.selectedCategory.words);
+      }
+      STATE.currentWord = STATE.deckQueue.pop();
+      STATE.usedWordsByCat[STATE.selectedCategory.id].add(STATE.currentWord);
+
+      const wordEl = document.getElementById('game-word');
+      wordEl.textContent = STATE.currentWord;
+
+      // Dynamically adjust font size for very long phrases
+      if (STATE.currentWord.length > 28) {
+        wordEl.className = 'font-display font-extrabold text-3xl sm:text-5xl md:text-6xl text-white leading-tight tracking-tight break-words drop-shadow-xl animate-pop';
+      } else if (STATE.currentWord.length > 16) {
+        wordEl.className = 'font-display font-extrabold text-4xl sm:text-6xl md:text-7xl text-white leading-tight tracking-tight break-words drop-shadow-xl animate-pop';
+      } else {
+        wordEl.className = 'font-display font-extrabold text-5xl sm:text-7xl md:text-8xl text-white leading-tight tracking-tight break-words drop-shadow-xl animate-pop';
+      }
+    }
+
+    function triggerFeedbackFlash(type) {
+      STATE.isTransitioning = true;
+      const flash = document.getElementById('feedback-flash');
+      const text = document.getElementById('feedback-text');
+
+      if (type === 'correct') {
+        flash.className = 'fixed inset-0 z-50 flex items-center justify-center pointer-events-none bg-emerald-600/95 transition-opacity duration-150';
+        text.textContent = 'CORRECT!';
+      } else {
+        flash.className = 'fixed inset-0 z-50 flex items-center justify-center pointer-events-none bg-amber-600/95 transition-opacity duration-150';
+        text.textContent = 'PASS';
+      }
+
+      setTimeout(() => {
+        flash.classList.add('hidden');
+        STATE.isTransitioning = false;
+        if (STATE.isPlaying) {
+          nextWord();
+        }
+      }, 360);
+    }
+
+    function handleCorrect() {
+      if (!STATE.isPlaying || STATE.isTransitioning) return;
+      STATE.score++;
+      document.getElementById('game-score').textContent = STATE.score;
+      STATE.roundHistory.push({ word: STATE.currentWord, status: 'correct' });
+      playTone('correct');
+      triggerFeedbackFlash('correct');
+    }
+
+    function handlePass() {
+      if (!STATE.isPlaying || STATE.isTransitioning) return;
+      STATE.roundHistory.push({ word: STATE.currentWord, status: 'pass' });
+      playTone('pass');
+      triggerFeedbackFlash('pass');
+    }
+
+    function endRoundEarly() {
+      finishRound(true);
+    }
+
+    function finishRound(endedEarly = false) {
+      STATE.isPlaying = false;
+      clearInterval(STATE.timerInterval);
+      clearInterval(STATE.countdownInterval);
+      tryExitFullscreen();
+
+      if (!endedEarly) {
+        playTone('timeup');
+      }
+
+      renderSummary();
+      showView('view-summary');
+    }
+
+    function renderSummary() {
+      document.getElementById('summary-category').textContent = STATE.selectedCategory.title;
+      document.getElementById('summary-score').textContent = STATE.score;
+
+      const passedCount = STATE.roundHistory.filter(item => item.status === 'pass').length;
+      document.getElementById('summary-passed').textContent = passedCount;
+
+      const listEl = document.getElementById('summary-list');
+      listEl.innerHTML = '';
+
+      if (STATE.roundHistory.length === 0) {
+        listEl.innerHTML = `<li class="text-center text-sm text-slate-500 py-6">No words completed in this round.</li>`;
+        return;
+      }
+
+      STATE.roundHistory.forEach(item => {
+        const li = document.createElement('li');
+        const isCorrect = item.status === 'correct';
+        li.className = `flex items-center justify-between px-4 py-3 rounded-2xl border ${
+          isCorrect
+            ? 'bg-emerald-500/10 border-emerald-500/25 text-white'
+            : 'bg-slate-900/60 border-white/5 text-slate-400'
+        }`;
+        li.innerHTML = `
+          <span class="font-medium text-sm sm:text-base ${isCorrect ? 'font-semibold' : 'line-through opacity-75'}">${item.word}</span>
+          <span class="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg ${
+            isCorrect ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/15 text-amber-300'
+          }">
+            ${isCorrect ? 'Got It' : 'Passed'}
+          </span>
+        `;
+        listEl.appendChild(li);
+      });
+    }
+
+    function playAgainSameCategory() {
+      if (STATE.selectedCategory) {
+        initiateCountdown();
+      } else {
+        showView('view-home');
+      }
+    }
+
+    // =========================================================================
+    // 7. DEVICE TILT SENSOR & KEYBOARD CONTROLS
+    // =========================================================================
+    /**
+     * When a phone is held vertically on the forehead (landscape or portrait):
+     * - Neutral forehead position puts screen perpendicular to the ground (beta ~ ±90° in portrait, gamma ~ ±90° in landscape).
+     * - Tilting forward/downward (nodding chin down) moves gamma/beta toward 0° (face down).
+     * - Tilting backward/upward (looking up at ceiling) moves gamma/beta toward ±180° (face up).
+     */
+    window.addEventListener('deviceorientation', (event) => {
+      if (!STATE.isPlaying || STATE.isTransitioning) return;
+
+      const { beta, gamma } = event;
+      if (beta === null || gamma === null) return;
+
+      // Determine whether device is currently in landscape or portrait
+      const isLandscape = window.innerWidth > window.innerHeight;
+      let tiltAngle = 0;
+
+      if (isLandscape) {
+        // In landscape forehead hold, gamma is around -90 (left landscape) or +90 (right landscape)
+        // Looking straight ahead: |gamma| is ~75° to 105°
+        // Nodding down (screen facing floor): |gamma| drops below 42°
+        // Tilting up (screen facing ceiling): |gamma| rises above 132° (or beta flips past ±130°)
+        const absGamma = Math.abs(gamma);
+        const absBeta = Math.abs(beta);
+
+        // Neutral zone check (upright on forehead)
+        if (absGamma >= 58 && absGamma <= 122 && absBeta < 120) {
+          STATE.tiltNeutral = true;
+          return;
+        }
+
+        if (!STATE.tiltNeutral) return;
+
+        if (absGamma < 42 && absBeta < 90) {
+          // Screen tilted face-down
+          tiltAngle = -1; // Down
+        } else if (absGamma > 135 || absBeta > 135) {
+          // Screen tilted face-up
+          tiltAngle = 1; // Up
+        }
+      } else {
+        // Portrait forehead hold: beta is ~90° when upright
+        // Nodding down (screen facing floor): beta drops below 45°
+        // Tilting up (screen facing ceiling): beta rises above 132°
+        if (beta >= 62 && beta <= 118) {
+          STATE.tiltNeutral = true;
+          return;
+        }
+
+        if (!STATE.tiltNeutral) return;
+
+        if (beta < 45 && beta > -30) {
+          tiltAngle = -1; // Down
+        } else if (beta > 132 || beta < -132) {
+          tiltAngle = 1; // Up
+        }
+      }
+
+      if (tiltAngle !== 0) {
+        STATE.tiltNeutral = false;
+        const effectiveTilt = STATE.flipTilt ? -tiltAngle : tiltAngle;
+        if (effectiveTilt === -1) {
+          handleCorrect();
+        } else {
+          handlePass();
+        }
+      }
+    });
+
+    // Keyboard Controls for Laptop / Desktop Testing
+    window.addEventListener('keydown', (e) => {
+      if (!STATE.isPlaying) return;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        handleCorrect();
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        handlePass();
+      } else if (e.key === 'Escape') {
+        endRoundEarly();
+      }
+    });
+
+    // Initialize App on Load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadPersistedData();
+      renderCategories();
+    });
   </script>
 </body>
 </html>
